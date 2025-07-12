@@ -1,0 +1,85 @@
+[Event "World Championship Match"]
+[Site "Reykjavik ISL"]
+[Date "1972.07.23"]
+[Round "6"]
+[White "Fischer, Robert James"]
+[Black "Spassky, Boris V"]
+[Result "1-0"]
+[WhiteElo "2785"]
+[BlackElo "2660"]
+[ECO "D59"]
+[Opening "Queen's Gambit Declined: Tartakower Defense"]
+
+1.c4 e6 2.Nf3 d5 3.d4 Nf6 4.Nc3 Be7 5.Bg5 O-O 6.e3 h6 7.Bh4 b6 8.cxd5 Nxd5 
+9.Bxe7 Qxe7 10.Nxd5 exd5 11.Rc1 Be6 12.Qa4 c5 13.Qa3 Rc8 14.Bb5 a6 15.dxc5 bxc5 
+16.O-O Ra7 17.Be2 Nd7 18.Nd4 Qf8 19.Nxe6 fxe6 20.e4 d4 21.f4 Qe7 22.e5 Rb8 
+23.Bc4 Kh8 24.Qh3 Nf8 25.b3 a5 26.f5 exf5 27.Rxf5 Nh7 28.Rcf1 Qd8 29.Qg3 Re7 
+30.h4 Rbb7 31.e6 Rbc7 32.Qe5 Qe8 33.a4 Qd8 34.R1f2 Qe8 35.R2f3 Qd8 36.Bd3 Qe8 
+37.Qe4 Nf6 38.Rxf6 gxf6 39.Rxf6 Kg8 40.Bc4 Kh8 41.Qf4 1-0
+
+[Event "Candidates Tournament"]
+[Site "Zurich SUI"]
+[Date "1953.??.??"]
+[Round "?"]
+[White "Petrosian, Tigran V"]
+[Black "Bronstein, David I"]
+[Result "1/2-1/2"]
+[WhiteElo "?"]
+[BlackElo "?"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation"]
+
+1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 O-O 6.Be2 e5 7.O-O Nc6 8.d5 Ne7 
+9.Nd2 a5 10.Rb1 Nd7 11.a3 f5 12.b4 Kh8 13.f3 Ng8 14.Qc2 Ngf6 15.Nb5 axb4 
+16.axb4 Nh5 17.g3 Ndf6 18.c5 Bd7 19.Nc4 fxe4 20.fxe4 Ng4 21.Rf4 Ne3 22.Nxe3 Nxg3 
+23.hxg3 Bxb5 24.Bxb5 Qh4 25.Rf3 Qxe4 26.Qxe4 Rxf3 27.Qxb7 dxc5 28.bxc5 Rd8 
+29.Bd2 Rdf8 30.Rb2 R8f7 31.Qb8+ Kg7 32.Qb4 R3f6 33.Be4 Rh6 34.Rb3 Rf2 35.Bc3 Rhf6 
+36.d6 cxd6 37.cxd6 Rf1+ 38.Kh2 R6f2+ 39.Kg1 Rxg2+ 40.Kf1 1/2-1/2
+
+[Event "Immortal Game"]
+[Site "London ENG"]
+[Date "1851.06.21"]
+[Round "?"]
+[White "Anderssen, Adolf"]
+[Black "Kieseritzky, Lionel"]
+[Result "1-0"]
+[WhiteElo "?"]
+[BlackElo "?"]
+[ECO "C33"]
+[Opening "King's Gambit Accepted"]
+
+1.e4 e5 2.f4 exf4 3.Bc4 Qh4+ 4.Kf1 b5 5.Bxb5 Nf6 6.Nf3 Qh6 7.d3 Nh5 8.Nh4 Qg5 
+9.Nf5 c6 10.g4 Nf6 11.Rg1 cxb5 12.h4 Qg6 13.h5 Qg5 14.Qf3 Ng8 15.Bxf4 Qf6 
+16.Nc3 Bc5 17.Nd5 Qxb2 18.Bd6 Bxg1 19.e5 Qxa1+ 20.Ke2 Na6 21.Nxg7+ Kd8 22.Qf6+ Nxf6 
+23.Be7# 1-0
+
+[Event "Short Game Example"]
+[Site "Online"]
+[Date "2023.01.01"]
+[Round "1"]
+[White "Player A"]
+[Black "Player B"]
+[Result "1-0"]
+[WhiteElo "1500"]
+[BlackElo "1400"]
+[ECO "C20"]
+[Opening "King's Pawn Game"]
+
+1.e4 e5 2.Qh5 Nc6 3.Bc4 Nf6 4.Qxf7# 1-0
+
+[Event "Stalemate Example"]
+[Site "Teaching Game"]
+[Date "2023.01.01"]
+[Round "1"]
+[White "Teacher"]
+[Black "Student"]
+[Result "1/2-1/2"]
+[WhiteElo "?"]
+[BlackElo "?"]
+[ECO "?"]
+[Opening "Endgame Study"]
+
+1.e4 c5 2.d4 cxd4 3.c3 dxc3 4.Nxc3 Nc6 5.Nf3 d6 6.Bc4 e6 7.O-O a6 8.Qe2 b5 
+9.Bb3 Bb7 10.Rd1 Nf6 11.e5 dxe5 12.Nxe5 Qc7 13.Nxc6 Bxc6 14.Bf4 Qb6 15.Rac1 Be7 
+16.Rd8+ Rxd8 17.Rxc6 Qb7 18.Rxe6 O-O 19.Rxe7 Qc6 20.Re1 Rd1 21.Rxd1 Qxc3 
+22.bxc3 Rc8 23.Rd8+ Rxd8 24.Qe7 Rd1+ 25.Qf1 Rxf1+ 26.Kxf1 1/2-1/2

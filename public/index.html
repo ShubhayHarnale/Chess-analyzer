@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game Analyzer</title>
+    <link rel="stylesheet" href="css/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>Chess Game Analyzer</h1>
+            <div class="upload-controls">
+                <button id="uploadFileBtn" class="header-btn">📁 Upload PGN</button>
+                <button id="pasteTextBtn" class="header-btn">📝 Paste PGN</button>
+                <button id="loadSampleBtn" class="header-btn">🎯 Load Sample</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - Analysis Panel -->
+            <div class="analysis-sidebar">
+                <!-- Game Information -->
+                <div class="panel game-info-panel">
+                    <h3>Game Information</h3>
+                    <div id="gameInfoContent" class="game-info-content">
+                        <p class="no-game-msg">Upload a PGN file to start analysis</p>
+                    </div>
+                </div>
+
+                <!-- Position Analysis -->
+                <div class="panel analysis-panel">
+                    <h3>Position Analysis</h3>
+                    <div class="evaluation-bar-container">
+                        <div class="evaluation-bar">
+                            <div id="evalBar" class="eval-fill"></div>
+                            <div class="eval-center-line"></div>
+                        </div>
+                        <div id="evalScore" class="eval-score">0.0</div>
+                    </div>
+                    
+                    <div class="analysis-content">
+                        <div class="move-comparison-section">
+                            <h4>Move Analysis</h4>
+                            <div class="move-comparison">
+                                <div class="actual-move">
+                                    <span class="move-label">Played:</span>
+                                    <span id="actualMoveDisplay" class="move-text">-</span>
+                                </div>
+                                <div class="suggested-move">
+                                    <span class="move-label">Best:</span>
+                                    <span id="bestMoveDisplay" class="move-text">-</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Best Move Display -->
+                            <div id="bestMoveHighlight" class="best-move-highlight hidden">
+                                <div class="best-move-notation">
+                                    <span class="best-move-label">🎯 Suggested:</span>
+                                    <span id="bestMoveNotation" class="best-move-text">-</span>
+                                </div>
+                                <div id="bestMoveDescription" class="best-move-description">
+                                    Click "Show Best Move" to see engine recommendation
+                                </div>
+                            </div>
+                            
+                            <div class="move-toggle-section">
+                                <button id="toggleMoveBtn" class="toggle-move-btn" disabled>
+                                    💡 Show Best Move
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="position-explanation">
+                            <h4>Position Analysis</h4>
+                            <div id="positionExplanation" class="explanation-text">
+                                Select a position to see analysis
+                            </div>
+                        </div>
+                        
+                        <div class="move-classification">
+                            <h4>Move Quality</h4>
+                            <div id="moveClassification" class="classification-badge">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Move Navigation -->
+                <div class="panel navigation-panel">
+                    <h3>Navigation</h3>
+                    <div class="nav-controls">
+                        <button id="firstMoveBtn" class="nav-btn">⏮️</button>
+                        <button id="prevMoveBtn" class="nav-btn">◀️</button>
+                        <button id="nextMoveBtn" class="nav-btn">▶️</button>
+                        <button id="lastMoveBtn" class="nav-btn">⏭️</button>
+                    </div>
+                    <div class="position-info">
+                        <div id="currentPositionInfo" class="position-display">
+                            Starting Position
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Move List -->
+                <div class="panel moves-panel">
+                    <h3>Game Moves</h3>
+                    <div id="movesList" class="moves-list-container">
+                        <p class="no-moves-msg">No moves loaded</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chess Board Container -->
+            <div class="board-container">
+                <div class="board-header">
+                    <div class="player-info black-player">
+                        <span id="blackPlayerName" class="player-name">Black Player</span>
+                        <span id="blackPlayerElo" class="player-elo"></span>
+                    </div>
+                </div>
+                
+                <div class="board-wrapper">
+                    <div id="chessBoard" class="chess-board"></div>
+                </div>
+                
+                <div class="board-footer">
+                    <div class="player-info white-player">
+                        <span id="whitePlayerName" class="player-name">White Player</span>
+                        <span id="whitePlayerElo" class="player-elo"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="uploadModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Upload PGN File</h3>
+                    <button id="closeUploadModal" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <div class="upload-icon">📁</div>
+                            <h3>Drop your PGN file here</h3>
+                            <p>or click to browse</p>
+                            <input type="file" id="fileInput" accept=".pgn" hidden>
+                        </div>
+                    </div>
+                    <div class="upload-info">
+                        <p><strong>Supported format:</strong> PGN files only</p>
+                        <p><strong>Maximum size:</strong> 5MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paste Text Modal -->
+        <div id="pasteModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Paste PGN Text</h3>
+                    <button id="closePasteModal" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="pgnTextInput" placeholder="Paste your PGN text here...
+
+Example:
+[Event &quot;Sample Game&quot;]
+[Site &quot;Online&quot;]
+[Date &quot;2023.01.01&quot;]
+[Round &quot;1&quot;]
+[White &quot;Player 1&quot;]
+[Black &quot;Player 2&quot;]
+[Result &quot;1-0&quot;]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3 1-0"></textarea>
+                    <div class="modal-actions">
+                        <button id="validatePgnBtn" class="validate-btn">Validate PGN</button>
+                        <button id="parsePgnBtn" class="parse-btn">Parse Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing...</p>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="messageContainer" class="message-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="js/chessboard-1.0.0.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
