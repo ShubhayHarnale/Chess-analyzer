@@ -7,6 +7,7 @@ const { Chess } = require('chess.js');
 const winston = require('winston');
 const PGNParser = require('./lib/pgnParser');
 const StockfishAnalyzer = require('./lib/stockfishAnalyzer');
+const MistralService = require('./lib/mistralService');
 require('dotenv').config();
 
 const app = express();
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 // Initialize services
 const pgnParser = new PGNParser();
 const stockfishAnalyzer = new StockfishAnalyzer();
+const mistralService = new MistralService();
 
 // Configure Winston logger
 const logger = winston.createLogger({
@@ -317,6 +319,82 @@ app.get('/api/test-stockfish', async (req, res) => {
       available: false,
       message: error.message,
       suggestion: 'Please install Stockfish and ensure it\'s available in your system PATH'
+    });
+  }
+});
+
+// AI Chat endpoints
+app.post('/api/chat/ask', async (req, res) => {
+  try {
+    const { question, gameData, currentMove } = req.body;
+    
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    if (!mistralService.isAvailable) {
+      return res.status(503).json({ 
+        error: 'AI chat is not available. Please configure MISTRAL_API_KEY in your environment variables.',
+        available: false
+      });
+    }
+
+    logger.info('Processing AI chat question:', question);
+    
+    try {
+      const response = await mistralService.analyzeGameQuestion(gameData, question, currentMove);
+      
+      res.json({
+        success: true,
+        response: response,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      logger.error('AI analysis failed:', error);
+      res.status(500).json({ 
+        success: false,
+        error: `AI analysis failed: ${error.message}`,
+        available: true
+      });
+    }
+
+  } catch (error) {
+    logger.error('Chat error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Chat request failed',
+      available: mistralService.isAvailable
+    });
+  }
+});
+
+// Test AI availability
+app.get('/api/chat/status', async (req, res) => {
+  try {
+    if (!mistralService.isAvailable) {
+      res.json({
+        available: false,
+        message: 'Mistral AI is not configured. Add MISTRAL_API_KEY to enable chat features.'
+      });
+      return;
+    }
+
+    logger.info('Testing Mistral AI connection...');
+    
+    const testResult = await mistralService.testConnection();
+    
+    res.json({
+      available: testResult.available,
+      message: testResult.message,
+      testResponse: testResult.testResponse || null
+    });
+
+  } catch (error) {
+    logger.error('AI status check error:', error);
+    res.json({
+      available: false,
+      message: error.message
     });
   }
 });

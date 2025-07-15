@@ -9,11 +9,14 @@ class ChessAnalyzer {
         this.isAnalyzing = false;
         this.showingBestMove = false;
         this.originalPositionIndex = null; // Store original position when showing best move
+        this.isInteractiveMode = false; // Track if user is exploring alternatives
+        this.originalGameFen = null; // Store original position FEN for reset
         
         this.initializeElements();
         this.attachEventListeners();
         this.initializeBoard();
         this.showWelcomeState();
+        this.initializeAIChat();
     }
 
     initializeElements() {
@@ -66,6 +69,18 @@ class ChessAnalyzer {
         // Move list
         this.movesList = document.getElementById('movesList');
 
+        // Chat elements
+        this.chatMessages = document.getElementById('chatMessages');
+        this.chatInput = document.getElementById('chatInput');
+        this.chatSendBtn = document.getElementById('chatSendBtn');
+        this.chatStatus = document.getElementById('chatStatus');
+        this.chatStatusText = document.getElementById('chatStatusText');
+
+        // Interactive board elements
+        this.resetBoardBtn = document.getElementById('resetBoardBtn');
+        this.interactiveStatus = document.getElementById('interactiveStatus');
+        this.interactiveStatusText = document.getElementById('interactiveStatusText');
+
         // Loading and messages
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.loadingText = document.getElementById('loadingText');
@@ -110,6 +125,18 @@ class ChessAnalyzer {
         // Move toggle button
         this.toggleMoveBtn.addEventListener('click', () => this.toggleMoveView());
 
+        // Chat functionality
+        this.chatSendBtn.addEventListener('click', () => this.sendChatMessage());
+        this.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendChatMessage();
+            }
+        });
+
+        // Interactive board functionality
+        this.resetBoardBtn.addEventListener('click', () => this.resetToGamePosition());
+
         // Keyboard navigation
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
     }
@@ -127,7 +154,11 @@ class ChessAnalyzer {
                 showNotation: true,
                 moveSpeed: 'fast',
                 snapbackSpeed: 500,
-                snapSpeed: 100
+                snapSpeed: 100,
+                draggable: true,
+                onDragStart: (source, piece, position, orientation) => this.onDragStart(source, piece, position, orientation),
+                onDrop: (source, target) => this.onDrop(source, target),
+                onSnapEnd: () => this.onSnapEnd()
             };
 
             // Check if required libraries are available
@@ -1283,6 +1314,295 @@ class ChessAnalyzer {
                 message.parentNode.removeChild(message);
             }
         }, 5000);
+    }
+
+    // Interactive Board functionality
+    onDragStart(source, piece, position, orientation) {
+        // Only allow moves if we have a game loaded
+        if (!this.currentGameData || !this.game) return false;
+        
+        // Only allow moves for the current player to move
+        if ((this.game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (this.game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    onDrop(source, target) {
+        // See if the move is legal
+        const move = this.game.move({
+            from: source,
+            to: target,
+            promotion: 'q' // Always promote to queen for simplicity
+        });
+
+        // Illegal move
+        if (move === null) return 'snapback';
+
+        // Legal move made
+        this.enterInteractiveMode();
+        this.analyzeAlternativeMove(move);
+        return true;
+    }
+
+    onSnapEnd() {
+        this.board.position(this.game.fen());
+    }
+
+    enterInteractiveMode() {
+        if (!this.isInteractiveMode) {
+            this.isInteractiveMode = true;
+            this.originalGameFen = this.gamePositions[this.currentPositionIndex].fen;
+            this.resetBoardBtn.disabled = false;
+            this.interactiveStatus.classList.add('modified');
+            this.interactiveStatusText.textContent = 'Exploring alternative move - click Reset to return';
+        }
+    }
+
+    resetToGamePosition() {
+        if (this.originalGameFen && this.game) {
+            this.game.load(this.originalGameFen);
+            this.board.position(this.originalGameFen);
+            this.isInteractiveMode = false;
+            this.resetBoardBtn.disabled = true;
+            this.interactiveStatus.classList.remove('modified');
+            this.interactiveStatusText.textContent = 'Try alternative moves by dragging pieces!';
+            
+            // Restore original analysis
+            this.updateAnalysisDisplay();
+        }
+    }
+
+    async analyzeAlternativeMove(move) {
+        try {
+            // Show loading state
+            this.interactiveStatusText.textContent = 'Analyzing alternative move...';
+            
+            // Get current position after the move
+            const currentFen = this.game.fen();
+            
+            // Analyze the new position
+            const response = await fetch('/api/analyze-position', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fen: currentFen,
+                    depth: 12
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update analysis display with alternative move analysis
+                this.displayAlternativeAnalysis(move, result);
+                this.interactiveStatusText.textContent = `Alternative move: ${move.san} analyzed`;
+            } else {
+                this.interactiveStatusText.textContent = 'Analysis failed - try another move';
+            }
+            
+        } catch (error) {
+            console.error('Alternative move analysis failed:', error);
+            this.interactiveStatusText.textContent = 'Analysis error - try another move';
+        }
+    }
+
+    displayAlternativeAnalysis(move, analysis) {
+        // Update evaluation display
+        const evalScore = analysis.evaluation || '0.00';
+        this.evalScore.textContent = evalScore;
+        
+        // Update evaluation bar
+        this.updateEvaluationBar(evalScore);
+        
+        // Update move displays
+        this.actualMoveDisplay.textContent = move.san;
+        this.bestMoveDisplay.textContent = analysis.bestMove || '-';
+        
+        // Update explanation
+        const explanation = this.generateAlternativeExplanation(move, analysis);
+        this.positionExplanation.textContent = explanation;
+        
+        // Update move classification
+        this.updateMoveClassification({ classification: 'alternative', score: 0 });
+    }
+
+    generateAlternativeExplanation(move, analysis) {
+        let explanation = `You played ${move.san}. `;
+        
+        if (analysis.bestMove && analysis.bestMove !== move.san) {
+            explanation += `Engine suggests ${analysis.bestMove} instead. `;
+        } else {
+            explanation += `This matches the engine's top choice! `;
+        }
+        
+        explanation += `Position evaluation: ${analysis.evaluation || '0.00'}. `;
+        
+        if (move.captured) {
+            explanation += `This move captures material. `;
+        }
+        
+        if (move.san.includes('+')) {
+            explanation += `This move gives check. `;
+        }
+        
+        explanation += `Try different moves to explore other possibilities, or click Reset to return to the game.`;
+        
+        return explanation;
+    }
+
+    // AI Chat functionality
+    async initializeAIChat() {
+        try {
+            const response = await fetch('/api/chat/status');
+            const status = await response.json();
+            
+            if (status.available) {
+                this.enableChat();
+                this.hideChatStatus(); // Hide status immediately if available
+            } else {
+                this.showChatStatus(status.message, 'error');
+                this.disableChat();
+            }
+            
+        } catch (error) {
+            console.error('Failed to initialize AI chat:', error);
+            this.showChatStatus('AI unavailable - check your connection', 'error');
+            this.disableChat();
+        }
+    }
+
+    enableChat() {
+        this.chatInput.disabled = false;
+        this.chatSendBtn.disabled = false;
+        this.chatInput.placeholder = "Ask about your game...";
+    }
+
+    disableChat() {
+        this.chatInput.disabled = true;
+        this.chatSendBtn.disabled = true;
+        this.chatInput.placeholder = "AI chat unavailable";
+    }
+
+    showChatStatus(message, type = 'info') {
+        this.chatStatusText.textContent = message;
+        this.chatStatus.className = `chat-status ${type}`;
+        this.chatStatus.classList.remove('hidden');
+    }
+
+    hideChatStatus() {
+        this.chatStatus.classList.add('hidden');
+    }
+
+    async sendChatMessage() {
+        const question = this.chatInput.value.trim();
+        if (!question) return;
+
+        // Add user message to chat
+        this.addChatMessage(question, 'user');
+        
+        // Clear input and disable while processing
+        this.chatInput.value = '';
+        this.setChatLoading(true);
+        
+        // Show typing indicator
+        this.showTypingIndicator();
+
+        try {
+            // Prepare game context
+            const gameData = {
+                gameInfo: this.currentGameData?.gameInfo || null,
+                moves: this.currentGameData?.moves || [],
+                analysis: this.gameAnalysis || []
+            };
+
+            const response = await fetch('/api/chat/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question: question,
+                    gameData: gameData,
+                    currentMove: this.currentPositionIndex
+                })
+            });
+
+            const result = await response.json();
+            
+            // Remove typing indicator
+            this.hideTypingIndicator();
+
+            if (result.success) {
+                this.addChatMessage(result.response, 'ai');
+            } else {
+                this.addChatMessage(`Sorry, I couldn't process your question: ${result.error}`, 'ai');
+            }
+
+        } catch (error) {
+            console.error('Chat error:', error);
+            this.hideTypingIndicator();
+            this.addChatMessage('Sorry, I encountered an error while processing your question. Please try again.', 'ai');
+        } finally {
+            this.setChatLoading(false);
+        }
+    }
+
+    addChatMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}-message`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        // Handle HTML content safely (convert newlines to breaks)
+        const formattedContent = content.replace(/\n/g, '<br>');
+        contentDiv.innerHTML = formattedContent;
+        
+        messageDiv.appendChild(contentDiv);
+        this.chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-message ai-message typing-indicator';
+        typingDiv.id = 'typing-indicator';
+        
+        typingDiv.innerHTML = `
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span>AI is thinking...</span>
+        `;
+        
+        this.chatMessages.appendChild(typingDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    setChatLoading(loading) {
+        if (loading) {
+            this.chatSendBtn.classList.add('loading');
+            this.chatSendBtn.disabled = true;
+            this.chatInput.disabled = true;
+        } else {
+            this.chatSendBtn.classList.remove('loading');
+            this.chatSendBtn.disabled = false;
+            this.chatInput.disabled = false;
+        }
     }
 }
 

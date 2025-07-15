@@ -111,6 +111,7 @@
                         <p class="no-moves-msg">No moves loaded</p>
                     </div>
                 </div>
+
             </div>
 
             <!-- Chess Board Container -->
@@ -122,6 +123,15 @@
                     </div>
                 </div>
                 
+                <div class="board-controls">
+                    <button id="resetBoardBtn" class="reset-board-btn" disabled>
+                        ↩️ Reset to Game Position
+                    </button>
+                    <div id="interactiveStatus" class="interactive-status">
+                        <span id="interactiveStatusText">Try alternative moves by dragging pieces!</span>
+                    </div>
+                </div>
+                
                 <div class="board-wrapper">
                     <div id="chessBoard" class="chess-board"></div>
                 </div>
@@ -130,6 +140,39 @@
                     <div class="player-info white-player">
                         <span id="whitePlayerName" class="player-name">White Player</span>
                         <span id="whitePlayerElo" class="player-elo"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Chat Interface -->
+            <div class="chat-interface">
+                <div class="chat-header">
+                    <h3>🤖 AI Chess Coach</h3>
+                </div>
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="chat-message ai-message">
+                            <div class="message-content">
+                                <p>👋 Hi! I'm your AI chess coach. Upload a game and ask me questions like:</p>
+                                <ul>
+                                    <li>"What was my biggest mistake?"</li>
+                                    <li>"Why did I lose material on move 15?"</li>
+                                    <li>"How could I improve my opening?"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <div id="chatStatus" class="chat-status hidden">
+                            <span id="chatStatusText">Checking AI availability...</span>
+                        </div>
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="chatInput" class="chat-input" 
+                                   placeholder="Ask about your game..." disabled>
+                            <button id="chatSendBtn" class="chat-send-btn" disabled>
+                                <span>Send</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
