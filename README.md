@@ -93,8 +93,8 @@ Download from [Stockfish website](https://stockfishchess.org/download/) and add 
 5. **Setup AI Chat (Optional):**
    - Click the ⚙️ Settings button in the header
    - Enter your Mistral AI API key ([get one here](https://console.mistral.ai/))
-   - Click "Save API Key" - system will test it automatically
-   - AI chat becomes available immediately!
+   - Click "Use API Key" - system will test it automatically
+   - AI chat becomes available immediately for this session!
 
 ## 🚀 How to Use
 
@@ -192,7 +192,8 @@ GET /api/health
 
 **Option 1: User API Keys (Recommended)**
 - Users provide their own Mistral AI API keys through the Settings modal
-- Keys are stored locally in the browser (never sent to server)
+- Keys are stored in memory only for the current session (never saved to disk)
+- Keys are automatically cleared when the browser is closed
 - Get your API key from [Mistral AI Console](https://console.mistral.ai/)
 
 **Option 2: Server-Wide API Key**

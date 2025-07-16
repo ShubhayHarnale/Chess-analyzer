@@ -14,11 +14,13 @@ class ChessAnalyzer {
         this.boardOrientation = localStorage.getItem('chessAnalyzerBoardOrientation') || 'white'; // Track board orientation
         this.userPlayer = 'white'; // Track which player the user is
         this.lastUsedModal = null; // Track which modal was used last
+        this.currentApiKey = null; // Session-only API key storage
         
         this.initializeElements();
         this.attachEventListeners();
         this.initializeBoard();
         this.showWelcomeState();
+        this.clearLegacyApiKeys(); // Clear any old stored API keys for security
         this.initializeAIChat();
     }
 
@@ -2010,13 +2012,8 @@ class ChessAnalyzer {
     // AI Chat functionality
     async initializeAIChat() {
         try {
-            // Check if user has their own API key stored
-            const userApiKey = localStorage.getItem('mistralApiKey');
-            if (userApiKey) {
-                this.enableChat();
-                this.hideChatStatus();
-                return;
-            }
+            // DO NOT auto-load API keys from storage for security
+            // User must enter key in each session
             
             const response = await fetch('/api/chat/status');
             const status = await response.json();
@@ -2080,8 +2077,8 @@ class ChessAnalyzer {
                 analysis: this.gameAnalysis || []
             };
 
-            // Get user's API key if available
-            const userApiKey = localStorage.getItem('mistralApiKey');
+            // Get user's API key from current session (not from storage)
+            const userApiKey = this.currentApiKey;
 
             const response = await fetch('/api/chat/ask', {
                 method: 'POST',
@@ -2173,14 +2170,10 @@ class ChessAnalyzer {
 
     // Settings API Key Management
     loadApiKeyFromStorage() {
-        const savedApiKey = localStorage.getItem('mistralApiKey');
-        if (savedApiKey) {
-            this.mistralApiKey.value = savedApiKey;
-            this.showApiKeyStatus('API key loaded from storage', 'info');
-        } else {
-            this.mistralApiKey.value = '';
-            this.showApiKeyStatus('No API key saved', 'info');
-        }
+        // SECURITY: Do not load API keys from storage
+        // User must enter key in each session for security
+        this.mistralApiKey.value = '';
+        this.showApiKeyStatus('Enter your API key for this session', 'info');
     }
 
     toggleApiKeyVisibility_() {
@@ -2213,8 +2206,9 @@ class ChessAnalyzer {
             });
 
             if (response.ok) {
-                localStorage.setItem('mistralApiKey', apiKey);
-                this.showApiKeyStatus('✅ API key saved successfully!', 'success');
+                // SECURITY: Store API key in session memory only, not localStorage
+                this.currentApiKey = apiKey;
+                this.showApiKeyStatus('✅ API key validated and ready for this session!', 'success');
                 // Enable chat interface after successful API key save
                 this.enableChat();
                 this.hideChatStatus();
@@ -2230,12 +2224,20 @@ class ChessAnalyzer {
     }
 
     clearApiKey_() {
-        localStorage.removeItem('mistralApiKey');
+        // SECURITY: Clear session memory only (no localStorage to remove)
+        this.currentApiKey = null;
         this.mistralApiKey.value = '';
-        this.showApiKeyStatus('API key cleared', 'info');
+        this.showApiKeyStatus('API key cleared from session', 'info');
         // Disable chat interface when API key is cleared
         this.disableChat();
         this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
+    }
+
+    clearLegacyApiKeys() {
+        // SECURITY: Remove any previously stored API keys
+        localStorage.removeItem('mistralApiKey');
+        sessionStorage.removeItem('mistralApiKey');
+        console.log('Cleared legacy API keys from storage for security');
     }
 
     showApiKeyStatus(message, type) {

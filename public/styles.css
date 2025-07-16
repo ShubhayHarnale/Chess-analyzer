@@ -1266,6 +1266,16 @@ body {
     font-style: italic;
 }
 
+.settings-security-note {
+    font-size: 0.9rem;
+    color: #10b981;
+    background: #065f46;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #10b981;
+    margin-bottom: 1rem;
+}
+
 /* Paste Modal */
 #pgnTextInput {
     width: 100%;

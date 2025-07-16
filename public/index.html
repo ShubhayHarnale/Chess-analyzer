@@ -290,17 +290,20 @@ Example:
                             Enter your own Mistral AI API key to enable AI chat features. 
                             <a href="https://console.mistral.ai/" target="_blank">Get API key →</a>
                         </p>
+                        <p class="settings-security-note">
+                            🔒 <strong>Security:</strong> API keys are only stored in memory for this session and are cleared when you close the browser.
+                        </p>
                         <div class="api-key-input-group">
                             <input type="password" id="mistralApiKey" placeholder="Enter your Mistral AI API key..." class="api-key-input">
                             <button id="toggleApiKeyVisibility" class="toggle-visibility-btn">👁️</button>
                         </div>
                         <div class="api-key-status" id="apiKeyStatus"></div>
                         <div class="settings-actions">
-                            <button id="saveApiKey" class="save-btn">Save API Key</button>
+                            <button id="saveApiKey" class="save-btn">Use API Key</button>
                             <button id="clearApiKey" class="clear-btn">Clear</button>
                         </div>
                         <p class="settings-note">
-                            🔒 Your API key is stored locally in your browser and never sent to our servers.
+                            🔒 Your API key is stored in memory only for this session and is never saved to disk or sent to our servers.
                         </p>
                     </div>
                 </div>
