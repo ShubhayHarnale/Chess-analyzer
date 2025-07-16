@@ -2051,6 +2051,10 @@ class ChessAnalyzer {
     }
 
     showChatStatus(message, type = 'info') {
+        // Don't show error status if user has a valid API key
+        if (type === 'error' && this.currentApiKey) {
+            return;
+        }
         this.chatStatusText.textContent = message;
         this.chatStatus.className = `chat-status ${type}`;
         this.chatStatus.classList.remove('hidden');
@@ -2233,9 +2237,9 @@ class ChessAnalyzer {
         this.currentApiKey = null;
         this.mistralApiKey.value = '';
         this.showApiKeyStatus('API key cleared from session', 'info');
-        // Disable chat interface when API key is cleared and reinitialize
+        // Disable chat interface when API key is cleared
         this.disableChat();
-        this.initializeAIChat(); // Reinitialize to check server-side availability
+        this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
     }
 
     clearLegacyApiKeys() {
