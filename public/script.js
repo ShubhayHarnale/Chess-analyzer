@@ -2079,6 +2079,7 @@ class ChessAnalyzer {
 
             // Get user's API key from current session (not from storage)
             const userApiKey = this.currentApiKey;
+            console.log('Frontend sending userApiKey:', userApiKey ? `${userApiKey.substring(0, 8)}...` : 'null/undefined');
 
             const response = await fetch('/api/chat/ask', {
                 method: 'POST',
@@ -2208,6 +2209,7 @@ class ChessAnalyzer {
             if (response.ok) {
                 // SECURITY: Store API key in session memory only, not localStorage
                 this.currentApiKey = apiKey;
+                console.log('API key saved to session memory:', apiKey ? `${apiKey.substring(0, 8)}...` : 'null');
                 this.showApiKeyStatus('✅ API key validated and ready for this session!', 'success');
                 // Enable chat interface after successful API key save
                 this.enableChat();

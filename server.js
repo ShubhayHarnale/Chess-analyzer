@@ -337,9 +337,11 @@ app.post('/api/chat/ask', async (req, res) => {
     
     if (userApiKey) {
       // Create temporary service instance with user's API key
+      console.log('Using user-provided API key:', userApiKey?.length ? `${userApiKey.substring(0, 8)}...` : 'undefined');
       const MistralService = require('./lib/mistralService');
       serviceToUse = new MistralService();
       serviceToUse.apiKey = userApiKey;
+      serviceToUse.isAvailable = true; // Override availability check for user-provided keys
     } else if (!mistralService.isAvailable) {
       return res.status(503).json({ 
         error: 'AI chat is not available. Please provide your own API key or configure MISTRAL_API_KEY.',
@@ -348,6 +350,7 @@ app.post('/api/chat/ask', async (req, res) => {
     }
 
     logger.info('Processing AI chat question:', question);
+    console.log('Request body userApiKey:', req.body.userApiKey ? `${req.body.userApiKey.substring(0, 8)}...` : 'not provided');
     
     try {
       const response = await serviceToUse.analyzeGameQuestion(gameData, question, currentMove);
