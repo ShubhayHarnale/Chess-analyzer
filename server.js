@@ -414,12 +414,25 @@ app.post('/api/test-api-key', async (req, res) => {
     } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
       errorMessage = 'API key does not have required permissions';
     } else if (error.message.includes('429')) {
-      errorMessage = 'API rate limit exceeded - please try again later';
+      if (error.message.includes('capacity exceeded')) {
+        errorMessage = 'Your API key tier has exceeded capacity for this model. Please upgrade your Mistral AI plan or try again later';
+      } else {
+        errorMessage = 'API rate limit exceeded - please try again later';
+      }
     } else if (error.message.includes('500')) {
       errorMessage = 'Mistral AI service temporarily unavailable';
     } else if (error.message.includes('timeout') || error.message.includes('ECONNRESET')) {
       errorMessage = 'Connection to Mistral AI timed out - please try again';
+    } else if (error.message.includes('400')) {
+      errorMessage = 'Invalid request to Mistral AI - please check your API key format';
     }
+    
+    // Log the full error for debugging
+    console.error('Full API key test error:', {
+      message: error.message,
+      stack: error.stack,
+      apiKeyLength: req.body.apiKey ? req.body.apiKey.length : 'undefined'
+    });
     
     res.status(400).json({ error: errorMessage });
   }
