@@ -337,7 +337,6 @@ app.post('/api/chat/ask', async (req, res) => {
     
     if (userApiKey) {
       // Create temporary service instance with user's API key
-      console.log('Using user-provided API key:', userApiKey?.length ? `${userApiKey.substring(0, 8)}...` : 'undefined');
       const MistralService = require('./lib/mistralService');
       serviceToUse = new MistralService();
       serviceToUse.apiKey = userApiKey;
@@ -350,7 +349,6 @@ app.post('/api/chat/ask', async (req, res) => {
     }
 
     logger.info('Processing AI chat question:', question);
-    console.log('Request body userApiKey:', req.body.userApiKey ? `${req.body.userApiKey.substring(0, 8)}...` : 'not provided');
     
     try {
       const response = await serviceToUse.analyzeGameQuestion(gameData, question, currentMove);

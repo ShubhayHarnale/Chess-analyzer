@@ -2012,9 +2012,14 @@ class ChessAnalyzer {
     // AI Chat functionality
     async initializeAIChat() {
         try {
-            // DO NOT auto-load API keys from storage for security
-            // User must enter key in each session
+            // Check if user has entered their own API key
+            if (this.currentApiKey) {
+                this.enableChat();
+                this.hideChatStatus();
+                return;
+            }
             
+            // Check server-side API key availability
             const response = await fetch('/api/chat/status');
             const status = await response.json();
             
@@ -2022,7 +2027,7 @@ class ChessAnalyzer {
                 this.enableChat();
                 this.hideChatStatus(); // Hide status immediately if available
             } else {
-                this.showChatStatus(status.message, 'error');
+                this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
                 this.disableChat();
             }
             
@@ -2079,7 +2084,6 @@ class ChessAnalyzer {
 
             // Get user's API key from current session (not from storage)
             const userApiKey = this.currentApiKey;
-            console.log('Frontend sending userApiKey:', userApiKey ? `${userApiKey.substring(0, 8)}...` : 'null/undefined');
 
             const response = await fetch('/api/chat/ask', {
                 method: 'POST',
@@ -2209,7 +2213,6 @@ class ChessAnalyzer {
             if (response.ok) {
                 // SECURITY: Store API key in session memory only, not localStorage
                 this.currentApiKey = apiKey;
-                console.log('API key saved to session memory:', apiKey ? `${apiKey.substring(0, 8)}...` : 'null');
                 this.showApiKeyStatus('✅ API key validated and ready for this session!', 'success');
                 // Enable chat interface after successful API key save
                 this.enableChat();
@@ -2230,9 +2233,9 @@ class ChessAnalyzer {
         this.currentApiKey = null;
         this.mistralApiKey.value = '';
         this.showApiKeyStatus('API key cleared from session', 'info');
-        // Disable chat interface when API key is cleared
+        // Disable chat interface when API key is cleared and reinitialize
         this.disableChat();
-        this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
+        this.initializeAIChat(); // Reinitialize to check server-side availability
     }
 
     clearLegacyApiKeys() {
