@@ -2010,6 +2010,14 @@ class ChessAnalyzer {
     // AI Chat functionality
     async initializeAIChat() {
         try {
+            // Check if user has their own API key stored
+            const userApiKey = localStorage.getItem('mistralApiKey');
+            if (userApiKey) {
+                this.enableChat();
+                this.hideChatStatus();
+                return;
+            }
+            
             const response = await fetch('/api/chat/status');
             const status = await response.json();
             
@@ -2207,6 +2215,9 @@ class ChessAnalyzer {
             if (response.ok) {
                 localStorage.setItem('mistralApiKey', apiKey);
                 this.showApiKeyStatus('✅ API key saved successfully!', 'success');
+                // Enable chat interface after successful API key save
+                this.enableChat();
+                this.hideChatStatus();
             } else {
                 const error = await response.json();
                 this.showApiKeyStatus(`❌ Invalid API key: ${error.error}`, 'error');
@@ -2222,6 +2233,9 @@ class ChessAnalyzer {
         localStorage.removeItem('mistralApiKey');
         this.mistralApiKey.value = '';
         this.showApiKeyStatus('API key cleared', 'info');
+        // Disable chat interface when API key is cleared
+        this.disableChat();
+        this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
     }
 
     showApiKeyStatus(message, type) {
