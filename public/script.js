@@ -2109,14 +2109,24 @@ class ChessAnalyzer {
 
             if (result.success) {
                 this.addChatMessage(result.response, 'ai');
+                // Update status to show AI is working
+                this.showChatStatus('🤖 AI Chess Coach Ready', 'success');
             } else {
                 this.addChatMessage(`Sorry, I couldn't process your question: ${result.error}`, 'ai');
+                // Show error status only if no valid API key
+                if (!this.currentApiKey) {
+                    this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
+                }
             }
 
         } catch (error) {
             console.error('Chat error:', error);
             this.hideTypingIndicator();
             this.addChatMessage('Sorry, I encountered an error while processing your question. Please try again.', 'ai');
+            // Show error status only if no valid API key
+            if (!this.currentApiKey) {
+                this.showChatStatus('AI chat unavailable - configure API key in settings', 'error');
+            }
         } finally {
             this.setChatLoading(false);
         }
@@ -2220,7 +2230,7 @@ class ChessAnalyzer {
                 this.showApiKeyStatus('✅ API key validated and ready for this session!', 'success');
                 // Enable chat interface after successful API key save
                 this.enableChat();
-                this.hideChatStatus();
+                this.showChatStatus('🤖 AI Chess Coach Ready', 'success');
             } else {
                 const error = await response.json();
                 this.showApiKeyStatus(`❌ Invalid API key: ${error.error}`, 'error');

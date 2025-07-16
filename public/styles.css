@@ -572,9 +572,9 @@ body {
 }
 
 .chat-status.success {
-    background: #22543d;
-    color: #9ae6b4;
-    border-color: #38a169;
+    background: #065f46;
+    color: #10b981;
+    border-color: #10b981;
 }
 
 .chat-input-container {
