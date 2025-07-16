@@ -386,21 +386,42 @@ app.post('/api/test-api-key', async (req, res) => {
       return res.status(400).json({ error: 'API key is required' });
     }
 
+    // Basic format validation for Mistral API keys
+    if (apiKey.length < 10 || !apiKey.trim()) {
+      return res.status(400).json({ error: 'API key format appears invalid' });
+    }
+
     // Create a temporary MistralService instance to test the key
     const MistralService = require('./lib/mistralService');
     const testService = new MistralService();
     testService.apiKey = apiKey;
+    testService.isAvailable = true; // Override availability check
 
     // Test with a simple request
-    await testService.generateResponse('Test', 'Say "API key works" if you can see this.');
+    await testService.sendChatMessage([
+      { role: 'user', content: 'Say "API key works" if you can see this.' }
+    ]);
     
     res.json({ success: true, message: 'API key is valid' });
     
   } catch (error) {
     logger.error('API key test failed:', error);
-    res.status(400).json({ 
-      error: error.message.includes('401') ? 'Invalid API key' : 'API key test failed'
-    });
+    
+    let errorMessage = 'API key test failed';
+    
+    if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+      errorMessage = 'Invalid API key - please check your Mistral AI API key';
+    } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+      errorMessage = 'API key does not have required permissions';
+    } else if (error.message.includes('429')) {
+      errorMessage = 'API rate limit exceeded - please try again later';
+    } else if (error.message.includes('500')) {
+      errorMessage = 'Mistral AI service temporarily unavailable';
+    } else if (error.message.includes('timeout') || error.message.includes('ECONNRESET')) {
+      errorMessage = 'Connection to Mistral AI timed out - please try again';
+    }
+    
+    res.status(400).json({ error: errorMessage });
   }
 });
 
