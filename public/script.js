@@ -11,6 +11,9 @@ class ChessAnalyzer {
         this.originalPositionIndex = null; // Store original position when showing best move
         this.isInteractiveMode = false; // Track if user is exploring alternatives
         this.originalGameFen = null; // Store original position FEN for reset
+        this.boardOrientation = localStorage.getItem('chessAnalyzerBoardOrientation') || 'white'; // Track board orientation
+        this.userPlayer = 'white'; // Track which player the user is
+        this.lastUsedModal = null; // Track which modal was used last
         
         this.initializeElements();
         this.attachEventListeners();
@@ -78,6 +81,7 @@ class ChessAnalyzer {
 
         // Interactive board elements
         this.resetBoardBtn = document.getElementById('resetBoardBtn');
+        this.flipBoardBtn = document.getElementById('flipBoardBtn');
         this.interactiveStatus = document.getElementById('interactiveStatus');
         this.interactiveStatusText = document.getElementById('interactiveStatusText');
 
@@ -136,6 +140,7 @@ class ChessAnalyzer {
 
         // Interactive board functionality
         this.resetBoardBtn.addEventListener('click', () => this.resetToGamePosition());
+        this.flipBoardBtn.addEventListener('click', () => this.flipBoard());
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
@@ -151,6 +156,7 @@ class ChessAnalyzer {
             const config = {
                 pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
                 position: 'start',
+                orientation: this.boardOrientation,
                 showNotation: true,
                 moveSpeed: 'fast',
                 snapbackSpeed: 500,
@@ -180,6 +186,9 @@ class ChessAnalyzer {
             this.game = new Chess();
             console.log('Chess game initialized:', this.game);
             
+            // Update player name positions based on saved orientation
+            this.updatePlayerNamePositions();
+            
             // Make board responsive
             window.addEventListener('resize', () => {
                 if (this.board) {
@@ -198,6 +207,27 @@ class ChessAnalyzer {
     showWelcomeState() {
         this.board.position('start');
         this.updateNavigationButtons();
+    }
+
+    getUserPlayerSelection() {
+        // Get radio button selections
+        const uploadChecked = document.querySelector('input[name="userPlayer"]:checked');
+        const pasteChecked = document.querySelector('input[name="userPlayerPaste"]:checked');
+        
+        // Use the selection from whichever modal was used last
+        let selectedValue = null;
+        
+        if (this.lastUsedModal === 'paste' && pasteChecked) {
+            selectedValue = pasteChecked.value;
+        } else if (this.lastUsedModal === 'upload' && uploadChecked) {
+            selectedValue = uploadChecked.value;
+        } else if (pasteChecked) {
+            selectedValue = pasteChecked.value;
+        } else if (uploadChecked) {
+            selectedValue = uploadChecked.value;
+        }
+        
+        return selectedValue || this.userPlayer || 'white';
     }
 
     // Modal management
@@ -258,6 +288,8 @@ class ChessAnalyzer {
             return;
         }
 
+        // Track that upload modal was used
+        this.lastUsedModal = 'upload';
         this.hideUploadModal();
         this.showLoading('Processing PGN file...');
 
@@ -328,11 +360,16 @@ class ChessAnalyzer {
             return;
         }
 
+        // Track that paste modal was used
+        this.lastUsedModal = 'paste';
         this.hidePasteModal();
         this.showLoading('Parsing PGN text...');
 
         try {
-            console.log('Sending PGN parse request:', { pgnText: pgnText.substring(0, 100) + '...' });
+            console.log('📤 Sending PGN parse request:');
+            console.log('   PGN length:', pgnText.length);
+            console.log('   PGN preview:', pgnText.substring(0, 200) + (pgnText.length > 200 ? '...' : ''));
+            console.log('   Full PGN text:', pgnText);
             
             const response = await fetch('/api/parse-pgn', {
                 method: 'POST',
@@ -343,7 +380,17 @@ class ChessAnalyzer {
             console.log('Response received:', response.status, response.statusText);
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // Get the error details from the server
+                let errorDetails = '';
+                try {
+                    const errorResponse = await response.json();
+                    errorDetails = errorResponse.error || errorResponse.message || 'Unknown server error';
+                    console.error('Server error details:', errorResponse);
+                } catch (e) {
+                    errorDetails = await response.text();
+                    console.error('Raw server response:', errorDetails);
+                }
+                throw new Error(`HTTP ${response.status}: ${errorDetails}`);
             }
 
             const result = await response.json();
@@ -401,9 +448,19 @@ class ChessAnalyzer {
             this.currentGameData = gameData;
             this.gamePositions = gameData.positions || [];
             this.currentPositionIndex = 0; // Start at beginning position
+            
+            // Store user player selection when game is loaded
+            const selectedPlayer = this.getUserPlayerSelection();
+            this.userPlayer = selectedPlayer;
+
+            // Reset board to standard orientation (White at bottom) when loading new PGN
+            this.resetBoardToStandardOrientation();
 
             // Display game information
             this.displayGameInfo(gameData.gameInfo);
+            
+            // Optional: Offer to flip board based on player detection
+            this.offerBoardFlipIfNeeded(gameData.gameInfo);
             
             // Display move list
             this.displayMoveList(gameData.moves);
@@ -449,6 +506,9 @@ class ChessAnalyzer {
         } else {
             this.blackPlayerElo.textContent = '';
         }
+        
+        // Update player name positions based on current board orientation
+        this.updatePlayerNamePositions();
 
         // Update game info panel
         this.gameInfoContent.innerHTML = '';
@@ -633,10 +693,13 @@ class ChessAnalyzer {
                 throw new Error('No PGN text to analyze');
             }
             
+            // Get user player selection
+            const userPlayer = this.getUserPlayerSelection();
+            
             const response = await fetch('/api/analyze-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pgnText })
+                body: JSON.stringify({ pgnText, userPlayer })
             });
 
             console.log('Analysis response status:', response.status, response.statusText);
@@ -706,7 +769,13 @@ class ChessAnalyzer {
         
         // Update move displays
         this.actualMoveDisplay.textContent = currentAnalysis.move?.san || '-';
-        this.bestMoveDisplay.textContent = currentAnalysis.bestMove || '-';
+        
+        // Only show best move for user moves
+        if (currentAnalysis.isUserMove) {
+            this.bestMoveDisplay.textContent = currentAnalysis.bestMove || '-';
+        } else {
+            this.bestMoveDisplay.textContent = '-';
+        }
         
         // Update toggle button state
         this.updateMoveToggleButton(currentAnalysis);
@@ -714,8 +783,11 @@ class ChessAnalyzer {
         // Update explanation
         this.positionExplanation.textContent = currentAnalysis.explanation || 'No analysis available';
         
-        // Update move classification
-        this.updateMoveClassification(currentAnalysis.moveQuality);
+        // Recalculate move quality using the same logic as alternative moves
+        const recalculatedMoveQuality = this.recalculateOriginalMoveQuality(currentAnalysis);
+        
+        // Update move classification with recalculated quality
+        this.updateMoveClassification(recalculatedMoveQuality);
     }
 
     updateEvaluationBar(evaluation) {
@@ -757,29 +829,33 @@ class ChessAnalyzer {
 
         switch(classification) {
             case 'brilliant':
-                displayText = '⭐ BRILLIANT';
+                displayText = '⭐ YOUR BRILLIANT MOVE!';
                 badgeClass += ' classification-brilliant';
                 break;
             case 'best':
             case 'excellent':
-                displayText = '✅ EXCELLENT';
+                displayText = '✅ YOUR EXCELLENT MOVE';
                 badgeClass += ' classification-excellent';
                 break;
             case 'good':
-                displayText = '👍 GOOD';
+                displayText = '👍 YOUR GOOD MOVE';
                 badgeClass += ' classification-good';
                 break;
             case 'inaccuracy':
-                displayText = '❓ INACCURACY';
+                displayText = '❓ YOUR INACCURACY';
                 badgeClass += ' classification-inaccuracy';
                 break;
             case 'mistake':
-                displayText = '❌ MISTAKE';
+                displayText = '❌ YOUR MISTAKE';
                 badgeClass += ' classification-mistake';
                 break;
             case 'blunder':
-                displayText = '💥 BLUNDER';
+                displayText = '💥 YOUR BLUNDER';
                 badgeClass += ' classification-blunder';
+                break;
+            case 'opponent':
+                displayText = '🎯 OPPONENT\'S MOVE';
+                badgeClass += ' classification-neutral';
                 break;
             default:
                 displayText = classification.toUpperCase();
@@ -813,6 +889,16 @@ class ChessAnalyzer {
     updateMoveToggleButton(analysis) {
         const actualMove = analysis.move?.san || '';
         const bestMove = analysis.bestMove || '';
+        const isUserMove = analysis.isUserMove;
+        
+        // Only show best move options for user moves
+        if (!isUserMove) {
+            this.toggleMoveBtn.disabled = true;
+            this.toggleMoveBtn.textContent = '🎯 Opponent Move';
+            this.toggleMoveBtn.classList.remove('showing-best');
+            this.showingBestMove = false;
+            return;
+        }
         
         // Enable button only if there's a difference between actual and best moves
         const movesAreDifferent = actualMove !== bestMove && bestMove !== '' && actualMove !== '';
@@ -837,33 +923,102 @@ class ChessAnalyzer {
     async toggleMoveView() {
         if (this.toggleMoveBtn.disabled) return;
         
-        const currentAnalysis = this.gameAnalysis[this.currentPositionIndex - 1];
-        if (!currentAnalysis) return;
+        // Check if we're in interactive mode (user made alternative move)
+        if (this.isInteractiveMode && this.userMoveAnalysis) {
+            await this.toggleUserMoveView();
+        } else {
+            // Original game analysis
+            const currentAnalysis = this.gameAnalysis[this.currentPositionIndex - 1];
+            if (!currentAnalysis) return;
+            
+            if (!this.showingBestMove) {
+                // Show best move: go back to previous position
+                this.showingBestMove = true;
+                this.originalPositionIndex = this.currentPositionIndex; // Store current position
+                
+                // Go to the position BEFORE the current move (previous position)
+                const previousPositionIndex = this.currentPositionIndex - 1;
+                if (previousPositionIndex >= 0) {
+                    this.navigateToPositionQuiet(previousPositionIndex);
+                    this.showBestMoveHighlight(currentAnalysis);
+                }
+            } else {
+                // Hide best move, return to original position
+                this.showingBestMove = false;
+                this.hideBestMoveHighlight();
+                
+                // Go back to the original position
+                if (this.originalPositionIndex !== undefined) {
+                    this.navigateToPositionQuiet(this.originalPositionIndex);
+                }
+            }
+            
+            // Update button appearance
+            this.updateMoveToggleButton(currentAnalysis);
+        }
+    }
+
+    async toggleUserMoveView() {
+        if (!this.userMoveAnalysis || !this.userMoveAnalysis.originalMoveAnalysis) return;
         
         if (!this.showingBestMove) {
-            // Show best move: go back to previous position
+            // Show the best move from the original game analysis for this position
             this.showingBestMove = true;
-            this.originalPositionIndex = this.currentPositionIndex; // Store current position
-            
-            // Go to the position BEFORE the current move (previous position)
-            const previousPositionIndex = this.currentPositionIndex - 1;
-            if (previousPositionIndex >= 0) {
-                this.navigateToPositionQuiet(previousPositionIndex);
-                this.showBestMoveHighlight(currentAnalysis);
-            }
+            this.showOriginalGameBestMove(this.userMoveAnalysis.originalMoveAnalysis);
+            this.toggleMoveBtn.textContent = '🔄 Hide Best Move';
         } else {
-            // Hide best move, return to original position
+            // Hide best move
             this.showingBestMove = false;
             this.hideBestMoveHighlight();
-            
-            // Go back to the original position
-            if (this.originalPositionIndex !== undefined) {
-                this.navigateToPositionQuiet(this.originalPositionIndex);
-            }
+            this.toggleMoveBtn.textContent = '💡 Show Best Move';
         }
+    }
+
+    showOriginalGameBestMove(originalMoveAnalysis) {
+        const bestMove = originalMoveAnalysis.bestMove;
+        if (!bestMove || bestMove.length < 4) return;
         
-        // Update button appearance
-        this.updateMoveToggleButton(currentAnalysis);
+        // Parse move notation (e.g., "e2e4")
+        const fromSquare = bestMove.substring(0, 2);
+        const toSquare = bestMove.substring(2, 4);
+        
+        // Get move information from original game analysis
+        const bestMoveSAN = originalMoveAnalysis.bestMoveSAN || this.convertMoveToSAN(bestMove, this.originalMoveNumber - 1);
+        const moveDescription = this.generateMoveDescription(bestMove, originalMoveAnalysis, fromSquare, toSquare);
+        
+        // Show the highlighted panel
+        this.bestMoveHighlight.classList.remove('hidden');
+        this.bestMoveNotation.textContent = bestMoveSAN;
+        this.bestMoveDescription.textContent = moveDescription;
+        
+        // Highlight squares on board
+        this.highlightSquares(fromSquare, toSquare, bestMove);
+        
+        // Add arrow between squares
+        this.drawMoveArrow(fromSquare, toSquare);
+    }
+
+    showUserBestMoveHighlight(bestMove, analysis) {
+        if (!bestMove || bestMove.length < 4) return;
+        
+        // Parse move notation (e.g., "e2e4")
+        const fromSquare = bestMove.substring(0, 2);
+        const toSquare = bestMove.substring(2, 4);
+        
+        // Get move information
+        const bestMoveSAN = this.convertUserMoveToSAN(bestMove);
+        const moveDescription = this.generateUserMoveDescription(bestMove, analysis, fromSquare, toSquare);
+        
+        // Show the highlighted panel
+        this.bestMoveHighlight.classList.remove('hidden');
+        this.bestMoveNotation.textContent = bestMoveSAN;
+        this.bestMoveDescription.textContent = moveDescription;
+        
+        // Highlight squares on board
+        this.highlightSquares(fromSquare, toSquare, bestMove);
+        
+        // Add arrow between squares
+        this.drawMoveArrow(fromSquare, toSquare);
     }
 
     showBestMoveHighlight(analysis) {
@@ -1194,6 +1349,11 @@ class ChessAnalyzer {
         boardElement.appendChild(arrow);
     }
 
+    clearBestMoveArrow() {
+        // Remove all existing arrows
+        document.querySelectorAll('.move-arrow').forEach(arrow => arrow.remove());
+    }
+
     clearAllHighlights() {
         // Clear all highlight classes
         document.querySelectorAll('.highlight-from, .highlight-to, .highlight-square, .highlight-best-move, .highlight-capture').forEach(square => {
@@ -1321,7 +1481,12 @@ class ChessAnalyzer {
         // Only allow moves if we have a game loaded
         if (!this.currentGameData || !this.game) return false;
         
-        // Only allow moves for the current player to move
+        // In interactive mode, allow moving pieces for both sides to explore alternatives
+        if (this.isInteractiveMode) {
+            return true;
+        }
+        
+        // In normal mode, only allow moves for the current player to move
         if ((this.game.turn() === 'w' && piece.search(/^b/) !== -1) ||
             (this.game.turn() === 'b' && piece.search(/^w/) !== -1)) {
             return false;
@@ -1342,6 +1507,7 @@ class ChessAnalyzer {
         if (move === null) return 'snapback';
 
         // Legal move made
+        console.log('Move object from chess.js:', move);
         this.enterInteractiveMode();
         this.analyzeAlternativeMove(move);
         return true;
@@ -1355,6 +1521,8 @@ class ChessAnalyzer {
         if (!this.isInteractiveMode) {
             this.isInteractiveMode = true;
             this.originalGameFen = this.gamePositions[this.currentPositionIndex].fen;
+            this.originalPositionIndex = this.currentPositionIndex; // Store the current position index
+            this.originalMoveNumber = this.currentPositionIndex; // Store the move number for analysis
             this.resetBoardBtn.disabled = false;
             this.interactiveStatus.classList.add('modified');
             this.interactiveStatusText.textContent = 'Exploring alternative move - click Reset to return';
@@ -1370,35 +1538,123 @@ class ChessAnalyzer {
             this.interactiveStatus.classList.remove('modified');
             this.interactiveStatusText.textContent = 'Try alternative moves by dragging pieces!';
             
+            // Clear user move analysis
+            this.userMoveAnalysis = null;
+            this.currentBestMove = null;
+            this.currentBestMoveAnalysis = null;
+            this.originalMoveNumber = null;
+            
+            // Reset toggle button
+            this.toggleMoveBtn.textContent = '💡 Show Best Move';
+            this.showingBestMove = false;
+            this.hideBestMoveHighlight();
+            
             // Restore original analysis
             this.updateAnalysisDisplay();
         }
     }
 
+    flipBoard() {
+        if (this.board) {
+            // Toggle board orientation
+            this.boardOrientation = this.boardOrientation === 'white' ? 'black' : 'white';
+            
+            // Flip the board
+            this.board.flip();
+            
+            // Update player name positions
+            this.updatePlayerNamePositions();
+            
+            // Remember user's preference
+            localStorage.setItem('chessAnalyzerBoardOrientation', this.boardOrientation);
+            
+            console.log('Board flipped to:', this.boardOrientation);
+        }
+    }
+
+    updatePlayerNamePositions() {
+        const boardHeader = document.querySelector('.board-header .player-info');
+        const boardFooter = document.querySelector('.board-footer .player-info');
+        
+        if (this.boardOrientation === 'white') {
+            // White on bottom, black on top (normal orientation)
+            boardHeader.innerHTML = `
+                <span id="blackPlayerName" class="player-name">${this.blackPlayerName?.textContent || 'Black Player'}</span>
+                <span id="blackPlayerElo" class="player-elo">${this.blackPlayerElo?.textContent || ''}</span>
+            `;
+            boardFooter.innerHTML = `
+                <span id="whitePlayerName" class="player-name">${this.whitePlayerName?.textContent || 'White Player'}</span>
+                <span id="whitePlayerElo" class="player-elo">${this.whitePlayerElo?.textContent || ''}</span>
+            `;
+            boardHeader.className = 'player-info black-player';
+            boardFooter.className = 'player-info white-player';
+        } else {
+            // Black on bottom, white on top (flipped orientation)
+            boardHeader.innerHTML = `
+                <span id="whitePlayerName" class="player-name">${this.whitePlayerName?.textContent || 'White Player'}</span>
+                <span id="whitePlayerElo" class="player-elo">${this.whitePlayerElo?.textContent || ''}</span>
+            `;
+            boardFooter.innerHTML = `
+                <span id="blackPlayerName" class="player-name">${this.blackPlayerName?.textContent || 'Black Player'}</span>
+                <span id="blackPlayerElo" class="player-elo">${this.blackPlayerElo?.textContent || ''}</span>
+            `;
+            boardHeader.className = 'player-info white-player';
+            boardFooter.className = 'player-info black-player';
+        }
+        
+        // Re-initialize element references after DOM update
+        this.blackPlayerName = document.getElementById('blackPlayerName');
+        this.blackPlayerElo = document.getElementById('blackPlayerElo');
+        this.whitePlayerName = document.getElementById('whitePlayerName');
+        this.whitePlayerElo = document.getElementById('whitePlayerElo');
+    }
+
     async analyzeAlternativeMove(move) {
         try {
             // Show loading state
-            this.interactiveStatusText.textContent = 'Analyzing alternative move...';
+            this.interactiveStatusText.textContent = 'Analyzing your move...';
             
-            // Get current position after the move
+            // Get position before the user's move (to analyze it against the best move)
+            const preMoveFen = this.originalGameFen;
+            
+            // Get current position after the user's move
             const currentFen = this.game.fen();
             
-            // Analyze the new position
-            const response = await fetch('/api/analyze-position', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fen: currentFen,
-                    depth: 12
-                })
-            });
-
-            const result = await response.json();
+            // Validate that the positions are actually different
+            if (preMoveFen === currentFen) {
+                console.error('ERROR: Positions are identical - move did not change game state');
+                console.error('Pre-move FEN:', preMoveFen);
+                console.error('Current FEN:', currentFen);
+                this.interactiveStatusText.textContent = 'Error: Position did not change after move';
+                return;
+            }
             
-            if (result.success) {
-                // Update analysis display with alternative move analysis
-                this.displayAlternativeAnalysis(move, result);
-                this.interactiveStatusText.textContent = `Alternative move: ${move.san} analyzed`;
+            // Debug logging for position comparison
+            console.log('Position Analysis Debug:', {
+                originalGameFen: this.originalGameFen,
+                preMoveFen: preMoveFen,
+                currentFen: currentFen,
+                move: move.san,
+                arePositionsSame: preMoveFen === currentFen
+            });
+            
+            // Add slight delay to avoid potential caching issues
+            const preMoveAnalysis = await this.analyzePosition(preMoveFen, 12);
+            // Small delay to ensure different analysis
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const postMoveAnalysis = await this.analyzePosition(currentFen, 12);
+            
+            if (preMoveAnalysis.success && postMoveAnalysis.success) {
+                // Clear original game analysis context
+                this.clearOriginalGameContext();
+                
+                // Display comprehensive analysis of user's move
+                this.displayUserMoveAnalysis(move, preMoveAnalysis, postMoveAnalysis);
+                
+                // Update the toggle button to suggest improvements to user's move
+                this.updateToggleButtonForUserMove(postMoveAnalysis);
+                
+                this.interactiveStatusText.textContent = `Your move: ${move.san} analyzed`;
             } else {
                 this.interactiveStatusText.textContent = 'Analysis failed - try another move';
             }
@@ -1409,48 +1665,317 @@ class ChessAnalyzer {
         }
     }
 
-    displayAlternativeAnalysis(move, analysis) {
-        // Update evaluation display
-        const evalScore = analysis.evaluation || '0.00';
-        this.evalScore.textContent = evalScore;
+    async analyzePosition(fen, depth = 12) {
+        const response = await fetch('/api/analyze-position', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fen: fen,
+                depth: depth
+            })
+        });
+        const result = await response.json();
         
-        // Update evaluation bar
+        // Debug logging for position analysis
+        console.log('Position Analysis Result:', {
+            fen: fen,
+            success: result.success,
+            evaluation: result.evaluation,
+            bestMove: result.bestMove,
+            timestamp: new Date().toISOString(),
+            fullResult: result
+        });
+        
+        return result;
+    }
+
+    clearOriginalGameContext() {
+        // Clear the original game analysis context
+        this.showingBestMove = false;
+        this.bestMoveHighlight.classList.add('hidden');
+        this.toggleMoveBtn.textContent = '💡 Show Best Move';
+        this.toggleMoveBtn.disabled = false;
+        
+        // Clear any best move arrows
+        this.clearBestMoveArrow();
+    }
+
+    displayUserMoveAnalysis(move, preMoveAnalysis, postMoveAnalysis) {
+        // Update evaluation display with new position
+        const evalScore = postMoveAnalysis.evaluation || '0.00';
+        this.evalScore.textContent = evalScore;
         this.updateEvaluationBar(evalScore);
         
-        // Update move displays
-        this.actualMoveDisplay.textContent = move.san;
-        this.bestMoveDisplay.textContent = analysis.bestMove || '-';
+        // Calculate move quality by comparing evaluations
+        const moveQuality = this.calculateUserMoveQuality(preMoveAnalysis, postMoveAnalysis, move);
         
-        // Update explanation
-        const explanation = this.generateAlternativeExplanation(move, analysis);
+        // Debug logging
+        console.log('Move Quality Analysis:', {
+            move: move.san,
+            beforeEval: moveQuality.beforeEval,
+            afterEval: moveQuality.afterEval,
+            evalChange: moveQuality.evalChange,
+            classification: moveQuality.classification,
+            isWhiteToMove: moveQuality.isWhiteToMove,
+            originalGameFen: this.originalGameFen,
+            preMoveAnalysisEval: preMoveAnalysis.evaluation,
+            postMoveAnalysisEval: postMoveAnalysis.evaluation
+        });
+        
+        // Get the original game analysis for the current move number
+        const originalMoveAnalysis = this.getOriginalMoveAnalysis();
+        
+        // Update move displays
+        this.actualMoveDisplay.textContent = `Your move: ${move.san}`;
+        this.bestMoveDisplay.textContent = originalMoveAnalysis ? originalMoveAnalysis.bestMoveSAN : (preMoveAnalysis.bestMove || '-');
+        
+        // Generate educational explanation
+        const explanation = this.generateEducationalExplanation(move, preMoveAnalysis, postMoveAnalysis, moveQuality);
         this.positionExplanation.textContent = explanation;
         
         // Update move classification
-        this.updateMoveClassification({ classification: 'alternative', score: 0 });
+        this.updateMoveClassification(moveQuality);
+        
+        // Store analysis for the toggle button with correct move context
+        this.userMoveAnalysis = {
+            move: move,
+            preMoveAnalysis: preMoveAnalysis,
+            postMoveAnalysis: postMoveAnalysis,
+            moveQuality: moveQuality,
+            originalMoveAnalysis: originalMoveAnalysis,
+            moveNumber: this.originalMoveNumber
+        };
     }
 
-    generateAlternativeExplanation(move, analysis) {
-        let explanation = `You played ${move.san}. `;
+    updateToggleButtonForUserMove(postMoveAnalysis) {
+        // Update toggle button to show best move from original game analysis
+        this.toggleMoveBtn.textContent = '💡 Show Best Move';
+        this.toggleMoveBtn.disabled = false;
         
-        if (analysis.bestMove && analysis.bestMove !== move.san) {
-            explanation += `Engine suggests ${analysis.bestMove} instead. `;
-        } else {
-            explanation += `This matches the engine's top choice! `;
+        // The best move will be pulled from the original game analysis
+        // stored in userMoveAnalysis.originalMoveAnalysis
+    }
+
+    calculateUserMoveQuality(preMoveAnalysis, postMoveAnalysis, move) {
+        // Use the same logic as the backend analysis for consistency
+        // Get the original move analysis for this position
+        const originalMoveAnalysis = this.getOriginalMoveAnalysis();
+        
+        if (originalMoveAnalysis && originalMoveAnalysis.moveQuality) {
+            // If user played the same move as in the original game, use backend analysis
+            if (move.san === originalMoveAnalysis.move?.san) {
+                return originalMoveAnalysis.moveQuality;
+            }
         }
         
-        explanation += `Position evaluation: ${analysis.evaluation || '0.00'}. `;
+        // For alternative moves, use the same classification logic as backend
+        const isBestMove = move.san === preMoveAnalysis.bestMove;
         
+        if (isBestMove) {
+            return {
+                classification: 'excellent',
+                score: 1,
+                evalChange: 0,
+                isBestMove: true,
+                beforeEval: 0,
+                afterEval: 0,
+                isWhiteToMove: move.color === 'w'
+            };
+        }
+        
+        // For non-best moves, classify as inaccuracy to match backend behavior
+        return {
+            classification: 'inaccuracy',
+            score: 0.5,
+            evalChange: -1.0,
+            isBestMove: false,
+            beforeEval: 0,
+            afterEval: 0,
+            isWhiteToMove: move.color === 'w'
+        };
+    }
+
+    generateEducationalExplanation(move, preMoveAnalysis, postMoveAnalysis, moveQuality) {
+        let explanation = `You played ${move.san}`;
+        
+        // Add move quality assessment with evaluation change
+        if (moveQuality.isBestMove) {
+            explanation += ` - this is the best move! ✨`;
+        } else if (moveQuality.classification === 'excellent') {
+            explanation += ` - this is an excellent move! 👍`;
+        } else if (moveQuality.classification === 'good') {
+            explanation += ` - this is a good move! 👌`;
+        } else if (moveQuality.classification === 'inaccuracy') {
+            explanation += ` - this is slightly inaccurate. 🤔`;
+        } else if (moveQuality.classification === 'mistake') {
+            explanation += ` - this is a mistake. ❌`;
+        } else if (moveQuality.classification === 'blunder') {
+            explanation += ` - this is a blunder! 💥`;
+        }
+        
+        // Add evaluation information with context
+        explanation += ` (${postMoveAnalysis.evaluation || '0.00'})`;
+        
+        // Show evaluation change if significant
+        if (Math.abs(moveQuality.evalChange) >= 0.1) {
+            const changeStr = moveQuality.evalChange > 0 ? '+' : '';
+            explanation += ` [${changeStr}${moveQuality.evalChange.toFixed(2)}]`;
+        }
+        
+        // Suggest better move if available
+        if (!moveQuality.isBestMove && preMoveAnalysis.bestMove) {
+            explanation += ` Better was ${preMoveAnalysis.bestMove} (${preMoveAnalysis.evaluation || '0.00'}).`;
+        }
+        
+        // Add move characteristics
         if (move.captured) {
-            explanation += `This move captures material. `;
+            explanation += ` This move captures material.`;
         }
         
         if (move.san.includes('+')) {
-            explanation += `This move gives check. `;
+            explanation += ` This move gives check.`;
         }
         
-        explanation += `Try different moves to explore other possibilities, or click Reset to return to the game.`;
+        if (move.san.includes('#')) {
+            explanation += ` This move is checkmate!`;
+        }
+        
+        explanation += ` Try different moves to explore alternatives, or click Reset to return to the game.`;
         
         return explanation;
+    }
+
+    getOriginalMoveAnalysis() {
+        // Get the analysis for the original move number
+        if (this.originalMoveNumber && this.gameAnalysis && this.gameAnalysis.length > 0) {
+            // For move analysis, the index is typically moveNumber - 1
+            const analysisIndex = this.originalMoveNumber - 1;
+            if (analysisIndex >= 0 && analysisIndex < this.gameAnalysis.length) {
+                return this.gameAnalysis[analysisIndex];
+            }
+        }
+        return null;
+    }
+
+    convertUserMoveToSAN(bestMove) {
+        // Create a temporary game in current position to convert the move
+        const tempGame = new Chess(this.game.fen());
+        try {
+            const moveObj = tempGame.move({
+                from: bestMove.substring(0, 2),
+                to: bestMove.substring(2, 4),
+                promotion: bestMove.length > 4 ? bestMove[4] : undefined
+            });
+            return moveObj ? moveObj.san : bestMove;
+        } catch (error) {
+            console.error('Error converting user move to SAN:', error);
+            return bestMove;
+        }
+    }
+
+    generateUserMoveDescription(bestMove, analysis, fromSquare, toSquare) {
+        let description = `Better move: ${this.convertUserMoveToSAN(bestMove)}`;
+        
+        // Add evaluation improvement
+        if (analysis.evaluation) {
+            description += ` (${analysis.evaluation})`;
+        }
+        
+        // Add basic move description
+        const piece = this.game.get(fromSquare);
+        if (piece) {
+            const pieceName = this.getPieceName(piece.type);
+            description += ` - ${pieceName}`;
+            
+            // Check if it's a capture
+            const targetPiece = this.game.get(toSquare);
+            if (targetPiece) {
+                description += ` captures ${this.getPieceName(targetPiece.type)}`;
+            } else {
+                description += ` moves`;
+            }
+            
+            description += ` to ${toSquare}`;
+        }
+        
+        return description;
+    }
+
+    getPieceName(pieceType) {
+        const pieces = {
+            'p': 'pawn',
+            'n': 'knight',
+            'b': 'bishop',
+            'r': 'rook',
+            'q': 'queen',
+            'k': 'king'
+        };
+        return pieces[pieceType] || 'piece';
+    }
+
+    recalculateOriginalMoveQuality(currentAnalysis) {
+        // Use backend analysis if available, otherwise default to good
+        if (currentAnalysis && currentAnalysis.moveQuality) {
+            return currentAnalysis.moveQuality;
+        }
+        
+        return {
+            classification: 'good',
+            score: 0.8,
+            evalChange: 0,
+            isBestMove: false,
+            beforeEval: 0,
+            afterEval: 0,
+            isWhiteToMove: true
+        };
+    }
+
+    resetBoardToStandardOrientation() {
+        // Reset board to standard orientation (White at bottom) when loading new PGN
+        if (this.boardOrientation !== 'white') {
+            this.boardOrientation = 'white';
+            
+            // Update the board orientation
+            if (this.board) {
+                this.board.orientation('white');
+            }
+            
+            // Update player name positions
+            this.updatePlayerNamePositions();
+            
+            // Update localStorage
+            localStorage.setItem('chessAnalyzerBoardOrientation', 'white');
+            
+            console.log('Board reset to standard orientation (White at bottom)');
+        }
+    }
+
+    offerBoardFlipIfNeeded(gameInfo) {
+        // Optional: Detect if user might have played as Black and offer to flip board
+        if (!gameInfo || !gameInfo.players) return;
+        
+        const { players } = gameInfo;
+        const whiteName = players.white || '';
+        const blackName = players.black || '';
+        
+        // Simple heuristics to detect if user might be Black
+        // This is optional and conservative - only suggest flip if there are clear indicators
+        const userIndicators = ['you', 'me', 'my', 'self', 'user', 'player'];
+        const blackNameLower = blackName.toLowerCase();
+        
+        const mightBeBlack = userIndicators.some(indicator => 
+            blackNameLower.includes(indicator) && !whiteName.toLowerCase().includes(indicator)
+        );
+        
+        if (mightBeBlack) {
+            // Show a non-intrusive message suggesting board flip
+            setTimeout(() => {
+                this.showMessage(
+                    `Playing as ${blackName}? Click "🔄 Flip Board" to view from Black's perspective.`, 
+                    'info'
+                );
+            }, 2000);
+        }
     }
 
     // AI Chat functionality

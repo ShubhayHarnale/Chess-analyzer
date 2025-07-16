@@ -127,6 +127,9 @@
                     <button id="resetBoardBtn" class="reset-board-btn" disabled>
                         ↩️ Reset to Game Position
                     </button>
+                    <button id="flipBoardBtn" class="flip-board-btn">
+                        🔄 Flip Board
+                    </button>
                     <div id="interactiveStatus" class="interactive-status">
                         <span id="interactiveStatusText">Try alternative moves by dragging pieces!</span>
                     </div>
@@ -194,6 +197,22 @@
                             <input type="file" id="fileInput" accept=".pgn" hidden>
                         </div>
                     </div>
+                    <div class="player-selection">
+                        <h4>Which player are you?</h4>
+                        <div class="player-options">
+                            <label class="player-option">
+                                <input type="radio" name="userPlayer" value="white" checked>
+                                <span class="radio-custom"></span>
+                                ⚪ White
+                            </label>
+                            <label class="player-option">
+                                <input type="radio" name="userPlayer" value="black">
+                                <span class="radio-custom"></span>
+                                ⚫ Black
+                            </label>
+                        </div>
+                        <p class="player-help">Analysis will focus on your moves only</p>
+                    </div>
                     <div class="upload-info">
                         <p><strong>Supported format:</strong> PGN files only</p>
                         <p><strong>Maximum size:</strong> 5MB</p>
@@ -222,6 +241,22 @@ Example:
 [Result &quot;1-0&quot;]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3 1-0"></textarea>
+                    <div class="player-selection">
+                        <h4>Which player are you?</h4>
+                        <div class="player-options">
+                            <label class="player-option">
+                                <input type="radio" name="userPlayerPaste" value="white" checked>
+                                <span class="radio-custom"></span>
+                                ⚪ White
+                            </label>
+                            <label class="player-option">
+                                <input type="radio" name="userPlayerPaste" value="black">
+                                <span class="radio-custom"></span>
+                                ⚫ Black
+                            </label>
+                        </div>
+                        <p class="player-help">Analysis will focus on your moves only</p>
+                    </div>
                     <div class="modal-actions">
                         <button id="validatePgnBtn" class="validate-btn">Validate PGN</button>
                         <button id="parsePgnBtn" class="parse-btn">Parse Game</button>

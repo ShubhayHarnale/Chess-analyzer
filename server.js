@@ -128,16 +128,16 @@ app.post('/api/upload-pgn', upload.single('pgnFile'), (req, res) => {
 // New endpoint for comprehensive game analysis
 app.post('/api/analyze-game', async (req, res) => {
   try {
-    const { pgnText } = req.body;
+    const { pgnText, userPlayer = 'white' } = req.body;
     
     if (!pgnText) {
       return res.status(400).json({ error: 'PGN text is required' });
     }
 
-    logger.info('Starting comprehensive game analysis');
+    logger.info(`Starting user-focused analysis for ${userPlayer} player`);
     
     try {
-      const analysis = await stockfishAnalyzer.analyzeGame(pgnText);
+      const analysis = await stockfishAnalyzer.analyzeGame(pgnText, userPlayer);
       
       res.json({
         success: true,
