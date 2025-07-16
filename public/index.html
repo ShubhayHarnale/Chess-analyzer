@@ -16,6 +16,7 @@
                 <button id="uploadFileBtn" class="header-btn">📁 Upload PGN</button>
                 <button id="pasteTextBtn" class="header-btn">📝 Paste PGN</button>
                 <button id="loadSampleBtn" class="header-btn">🎯 Load Sample</button>
+                <button id="settingsBtn" class="header-btn">⚙️ Settings</button>
             </div>
         </header>
 
@@ -167,11 +168,21 @@
                     </div>
                     <div class="chat-input-container">
                         <div id="chatStatus" class="chat-status hidden">
-                            <span id="chatStatusText">Checking AI availability...</span>
+                            <span id="chatStatusText">AI Chat Ready</span>
                         </div>
                         <div class="chat-input-wrapper">
-                            <input type="text" id="chatInput" class="chat-input" 
-                                   placeholder="Ask about your game..." disabled>
+                            <input type="text" 
+                                   id="chatInput" 
+                                   name="chess-chat-message"
+                                   class="chat-input" 
+                                   placeholder="Ask about your game..."
+                                   autocomplete="off"
+                                   autocorrect="off"
+                                   autocapitalize="off"
+                                   spellcheck="false"
+                                   role="textbox"
+                                   aria-label="Chess AI chat input"
+                                   disabled>
                             <button id="chatSendBtn" class="chat-send-btn" disabled>
                                 <span>Send</span>
                             </button>
@@ -260,6 +271,37 @@ Example:
                     <div class="modal-actions">
                         <button id="validatePgnBtn" class="validate-btn">Validate PGN</button>
                         <button id="parsePgnBtn" class="parse-btn">Parse Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button id="closeSettingsModal" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h4>AI Chat Configuration</h4>
+                        <p class="settings-description">
+                            Enter your own Mistral AI API key to enable AI chat features. 
+                            <a href="https://console.mistral.ai/" target="_blank">Get API key →</a>
+                        </p>
+                        <div class="api-key-input-group">
+                            <input type="password" id="mistralApiKey" placeholder="Enter your Mistral AI API key..." class="api-key-input">
+                            <button id="toggleApiKeyVisibility" class="toggle-visibility-btn">👁️</button>
+                        </div>
+                        <div class="api-key-status" id="apiKeyStatus"></div>
+                        <div class="settings-actions">
+                            <button id="saveApiKey" class="save-btn">Save API Key</button>
+                            <button id="clearApiKey" class="clear-btn">Clear</button>
+                        </div>
+                        <p class="settings-note">
+                            🔒 Your API key is stored locally in your browser and never sent to our servers.
+                        </p>
                     </div>
                 </div>
             </div>

@@ -1129,6 +1129,143 @@ body {
     font-style: italic;
 }
 
+/* Settings Modal */
+.settings-section {
+    background: #2a2a3a;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.settings-section h4 {
+    margin: 0 0 1rem 0;
+    color: #e2e8f0;
+    font-size: 1.1rem;
+}
+
+.settings-description {
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.settings-description a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.settings-description a:hover {
+    text-decoration: underline;
+}
+
+.api-key-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.api-key-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #4a5568;
+    border-radius: 6px;
+    background: #1a202c;
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.api-key-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.toggle-visibility-btn {
+    padding: 0.75rem;
+    border: 2px solid #4a5568;
+    border-radius: 6px;
+    background: #2d3748;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-visibility-btn:hover {
+    background: #4a5568;
+}
+
+.api-key-status {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-height: 1.5rem;
+}
+
+.api-key-status.success {
+    background: #065f46;
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.api-key-status.error {
+    background: #7f1d1d;
+    color: #f87171;
+    border: 1px solid #f87171;
+}
+
+.api-key-status.info {
+    background: #1e3a8a;
+    color: #60a5fa;
+    border: 1px solid #60a5fa;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.save-btn, .clear-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.save-btn {
+    background: #059669;
+    color: white;
+}
+
+.save-btn:hover {
+    background: #047857;
+}
+
+.save-btn:disabled {
+    background: #4a5568;
+    cursor: not-allowed;
+}
+
+.clear-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.clear-btn:hover {
+    background: #b91c1c;
+}
+
+.settings-note {
+    font-size: 0.85rem;
+    color: #a0aec0;
+    margin: 0;
+    font-style: italic;
+}
+
 /* Paste Modal */
 #pgnTextInput {
     width: 100%;

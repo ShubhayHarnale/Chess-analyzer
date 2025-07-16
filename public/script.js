@@ -27,12 +27,15 @@ class ChessAnalyzer {
         this.uploadFileBtn = document.getElementById('uploadFileBtn');
         this.pasteTextBtn = document.getElementById('pasteTextBtn');
         this.loadSampleBtn = document.getElementById('loadSampleBtn');
+        this.settingsBtn = document.getElementById('settingsBtn');
 
         // Modals
         this.uploadModal = document.getElementById('uploadModal');
         this.pasteModal = document.getElementById('pasteModal');
+        this.settingsModal = document.getElementById('settingsModal');
         this.closeUploadModal = document.getElementById('closeUploadModal');
         this.closePasteModal = document.getElementById('closePasteModal');
+        this.closeSettingsModal = document.getElementById('closeSettingsModal');
 
         // Upload elements
         this.uploadArea = document.getElementById('uploadArea');
@@ -79,6 +82,13 @@ class ChessAnalyzer {
         this.chatStatus = document.getElementById('chatStatus');
         this.chatStatusText = document.getElementById('chatStatusText');
 
+        // Settings elements
+        this.mistralApiKey = document.getElementById('mistralApiKey');
+        this.toggleApiKeyVisibility = document.getElementById('toggleApiKeyVisibility');
+        this.apiKeyStatus = document.getElementById('apiKeyStatus');
+        this.saveApiKey = document.getElementById('saveApiKey');
+        this.clearApiKey = document.getElementById('clearApiKey');
+
         // Interactive board elements
         this.resetBoardBtn = document.getElementById('resetBoardBtn');
         this.flipBoardBtn = document.getElementById('flipBoardBtn');
@@ -96,10 +106,12 @@ class ChessAnalyzer {
         this.uploadFileBtn.addEventListener('click', () => this.showUploadModal());
         this.pasteTextBtn.addEventListener('click', () => this.showPasteModal());
         this.loadSampleBtn.addEventListener('click', () => this.loadSampleGame());
+        this.settingsBtn.addEventListener('click', () => this.showSettingsModal());
 
         // Modal close buttons
         this.closeUploadModal.addEventListener('click', () => this.hideUploadModal());
         this.closePasteModal.addEventListener('click', () => this.hidePasteModal());
+        this.closeSettingsModal.addEventListener('click', () => this.hideSettingsModal());
 
         // Click outside modal to close
         this.uploadModal.addEventListener('click', (e) => {
@@ -107,6 +119,9 @@ class ChessAnalyzer {
         });
         this.pasteModal.addEventListener('click', (e) => {
             if (e.target === this.pasteModal) this.hidePasteModal();
+        });
+        this.settingsModal.addEventListener('click', (e) => {
+            if (e.target === this.settingsModal) this.hideSettingsModal();
         });
 
         // Upload area events
@@ -137,6 +152,11 @@ class ChessAnalyzer {
                 this.sendChatMessage();
             }
         });
+
+        // Settings functionality
+        this.toggleApiKeyVisibility.addEventListener('click', () => this.toggleApiKeyVisibility_());
+        this.saveApiKey.addEventListener('click', () => this.saveApiKey_());
+        this.clearApiKey.addEventListener('click', () => this.clearApiKey_());
 
         // Interactive board functionality
         this.resetBoardBtn.addEventListener('click', () => this.resetToGamePosition());
@@ -245,6 +265,15 @@ class ChessAnalyzer {
 
     hidePasteModal() {
         this.pasteModal.classList.add('hidden');
+    }
+
+    showSettingsModal() {
+        this.settingsModal.classList.remove('hidden');
+        this.loadApiKeyFromStorage();
+    }
+
+    hideSettingsModal() {
+        this.settingsModal.classList.add('hidden');
     }
 
     // File upload handling
@@ -2043,6 +2072,9 @@ class ChessAnalyzer {
                 analysis: this.gameAnalysis || []
             };
 
+            // Get user's API key if available
+            const userApiKey = localStorage.getItem('mistralApiKey');
+
             const response = await fetch('/api/chat/ask', {
                 method: 'POST',
                 headers: {
@@ -2051,7 +2083,8 @@ class ChessAnalyzer {
                 body: JSON.stringify({
                     question: question,
                     gameData: gameData,
-                    currentMove: this.currentPositionIndex
+                    currentMove: this.currentPositionIndex,
+                    userApiKey: userApiKey || undefined
                 })
             });
 
@@ -2128,6 +2161,72 @@ class ChessAnalyzer {
             this.chatSendBtn.disabled = false;
             this.chatInput.disabled = false;
         }
+    }
+
+    // Settings API Key Management
+    loadApiKeyFromStorage() {
+        const savedApiKey = localStorage.getItem('mistralApiKey');
+        if (savedApiKey) {
+            this.mistralApiKey.value = savedApiKey;
+            this.showApiKeyStatus('API key loaded from storage', 'info');
+        } else {
+            this.mistralApiKey.value = '';
+            this.showApiKeyStatus('No API key saved', 'info');
+        }
+    }
+
+    toggleApiKeyVisibility_() {
+        if (this.mistralApiKey.type === 'password') {
+            this.mistralApiKey.type = 'text';
+            this.toggleApiKeyVisibility.textContent = '🙈';
+        } else {
+            this.mistralApiKey.type = 'password';
+            this.toggleApiKeyVisibility.textContent = '👁️';
+        }
+    }
+
+    async saveApiKey_() {
+        const apiKey = this.mistralApiKey.value.trim();
+        
+        if (!apiKey) {
+            this.showApiKeyStatus('Please enter an API key', 'error');
+            return;
+        }
+
+        try {
+            // Test the API key by making a simple request
+            this.showApiKeyStatus('Testing API key...', 'info');
+            this.saveApiKey.disabled = true;
+
+            const response = await fetch('/api/test-api-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey })
+            });
+
+            if (response.ok) {
+                localStorage.setItem('mistralApiKey', apiKey);
+                this.showApiKeyStatus('✅ API key saved successfully!', 'success');
+            } else {
+                const error = await response.json();
+                this.showApiKeyStatus(`❌ Invalid API key: ${error.error}`, 'error');
+            }
+        } catch (error) {
+            this.showApiKeyStatus(`❌ Error testing API key: ${error.message}`, 'error');
+        } finally {
+            this.saveApiKey.disabled = false;
+        }
+    }
+
+    clearApiKey_() {
+        localStorage.removeItem('mistralApiKey');
+        this.mistralApiKey.value = '';
+        this.showApiKeyStatus('API key cleared', 'info');
+    }
+
+    showApiKeyStatus(message, type) {
+        this.apiKeyStatus.textContent = message;
+        this.apiKeyStatus.className = `api-key-status ${type}`;
     }
 }
 

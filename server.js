@@ -326,15 +326,23 @@ app.get('/api/test-stockfish', async (req, res) => {
 // AI Chat endpoints
 app.post('/api/chat/ask', async (req, res) => {
   try {
-    const { question, gameData, currentMove } = req.body;
+    const { question, gameData, currentMove, userApiKey } = req.body;
     
     if (!question) {
       return res.status(400).json({ error: 'Question is required' });
     }
 
-    if (!mistralService.isAvailable) {
+    // Use user-provided API key if available, otherwise fall back to server key
+    let serviceToUse = mistralService;
+    
+    if (userApiKey) {
+      // Create temporary service instance with user's API key
+      const MistralService = require('./lib/mistralService');
+      serviceToUse = new MistralService();
+      serviceToUse.apiKey = userApiKey;
+    } else if (!mistralService.isAvailable) {
       return res.status(503).json({ 
-        error: 'AI chat is not available. Please configure MISTRAL_API_KEY in your environment variables.',
+        error: 'AI chat is not available. Please provide your own API key or configure MISTRAL_API_KEY.',
         available: false
       });
     }
@@ -342,7 +350,7 @@ app.post('/api/chat/ask', async (req, res) => {
     logger.info('Processing AI chat question:', question);
     
     try {
-      const response = await mistralService.analyzeGameQuestion(gameData, question, currentMove);
+      const response = await serviceToUse.analyzeGameQuestion(gameData, question, currentMove);
       
       res.json({
         success: true,
@@ -365,6 +373,33 @@ app.post('/api/chat/ask', async (req, res) => {
       success: false,
       error: 'Chat request failed',
       available: mistralService.isAvailable
+    });
+  }
+});
+
+// Test user-provided API key
+app.post('/api/test-api-key', async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+    
+    if (!apiKey) {
+      return res.status(400).json({ error: 'API key is required' });
+    }
+
+    // Create a temporary MistralService instance to test the key
+    const MistralService = require('./lib/mistralService');
+    const testService = new MistralService();
+    testService.apiKey = apiKey;
+
+    // Test with a simple request
+    await testService.generateResponse('Test', 'Say "API key works" if you can see this.');
+    
+    res.json({ success: true, message: 'API key is valid' });
+    
+  } catch (error) {
+    logger.error('API key test failed:', error);
+    res.status(400).json({ 
+      error: error.message.includes('401') ? 'Invalid API key' : 'API key test failed'
     });
   }
 });
