@@ -22,6 +22,13 @@ A professional chess game analysis tool with a visual board interface, powered e
 - **Strategic Insights**: Piece activity, king safety, and positional considerations
 - **Alternative Suggestions**: Shows better moves when mistakes are made
 
+### 🤖 **AI Chess Coach (Optional)**
+- **Mistral AI Integration**: Intelligent chess coaching and analysis
+- **Game Context Awareness**: AI understands your game, position, and move history
+- **Educational Responses**: Get explanations about strategy, tactics, and improvements
+- **Interactive Q&A**: Ask questions like "What was my biggest mistake?" or "How can I improve my opening?"
+- **Privacy-First**: Use your own API key stored locally in your browser
+
 ### 🎮 **Advanced Navigation**
 - **Click-to-Navigate**: Click any move to jump to that position
 - **Keyboard Shortcuts**: Arrow keys, Home/End for quick navigation
@@ -83,6 +90,12 @@ Download from [Stockfish website](https://stockfishchess.org/download/) and add 
 4. **Open in browser:**
    Navigate to `http://localhost:3000`
 
+5. **Setup AI Chat (Optional):**
+   - Click the ⚙️ Settings button in the header
+   - Enter your Mistral AI API key ([get one here](https://console.mistral.ai/))
+   - Click "Save API Key" - system will test it automatically
+   - AI chat becomes available immediately!
+
 ## 🚀 How to Use
 
 ### 1️⃣ **Load a Game**
@@ -104,9 +117,16 @@ Download from [Stockfish website](https://stockfishchess.org/download/) and add 
 - **Move Quality**: See if moves are brilliant, good, inaccurate, or blunders
 - **Explanations**: Read detailed explanations of each move's impact
 
-### 4️⃣ **Understand the Interface**
+### 4️⃣ **Use AI Chat (Optional)**
+- **Setup**: Click ⚙️ Settings and enter your Mistral AI API key
+- **Ask Questions**: Type questions like "What was my biggest mistake?" or "How can I improve?"
+- **Get Coaching**: Receive personalized chess advice based on your game
+- **Context-Aware**: AI understands your current position and game history
+
+### 5️⃣ **Understand the Interface**
 - **Left Sidebar**: Game info, position analysis, navigation, and move list
 - **Center Board**: Interactive chess board showing current position
+- **Right Sidebar**: AI chat interface for interactive chess coaching
 - **Player Names**: See player names and ELO ratings above/below board
 - **Evaluation**: Green bar = good for White, Red = good for Black
 
@@ -166,6 +186,18 @@ GET /api/health
 
 - `PORT`: Server port (default: 3000)
 - `NODE_ENV`: Environment mode (development/production)
+- `MISTRAL_API_KEY`: (Optional) Server-wide Mistral AI API key for AI chat
+
+### AI Chat Setup
+
+**Option 1: User API Keys (Recommended)**
+- Users provide their own Mistral AI API keys through the Settings modal
+- Keys are stored locally in the browser (never sent to server)
+- Get your API key from [Mistral AI Console](https://console.mistral.ai/)
+
+**Option 2: Server-Wide API Key**
+- Set `MISTRAL_API_KEY` environment variable for all users
+- Not recommended for public deployments due to usage costs
 
 ### Move Quality Classifications
 
