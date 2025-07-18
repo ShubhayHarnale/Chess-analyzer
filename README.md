@@ -23,11 +23,11 @@ A professional chess game analysis tool with a visual board interface, powered e
 - **Alternative Suggestions**: Shows better moves when mistakes are made
 
 ### 🤖 **AI Chess Coach (Optional)**
-- **Mistral AI Integration**: Intelligent chess coaching and analysis
+- **Mistral AI Large Integration**: High-performance AI model for superior chess coaching and analysis
 - **Game Context Awareness**: AI understands your game, position, and move history
-- **Educational Responses**: Get explanations about strategy, tactics, and improvements
+- **Educational Responses**: Get detailed explanations about strategy, tactics, and improvements
 - **Interactive Q&A**: Ask questions like "What was my biggest mistake?" or "How can I improve my opening?"
-- **Privacy-First**: Use your own API key stored locally in your browser
+- **Privacy-First**: Use your own API key stored securely in session memory
 
 ### 🎮 **Advanced Navigation**
 - **Click-to-Navigate**: Click any move to jump to that position

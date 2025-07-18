@@ -89,23 +89,7 @@
                     </div>
                 </div>
 
-                <!-- Move Navigation -->
-                <div class="panel navigation-panel">
-                    <h3>Navigation</h3>
-                    <div class="nav-controls">
-                        <button id="firstMoveBtn" class="nav-btn">⏮️</button>
-                        <button id="prevMoveBtn" class="nav-btn">◀️</button>
-                        <button id="nextMoveBtn" class="nav-btn">▶️</button>
-                        <button id="lastMoveBtn" class="nav-btn">⏭️</button>
-                    </div>
-                    <div class="position-info">
-                        <div id="currentPositionInfo" class="position-display">
-                            Starting Position
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Move List -->
+                <!-- Move List (moved to navigation's position) -->
                 <div class="panel moves-panel">
                     <h3>Game Moves</h3>
                     <div id="movesList" class="moves-list-container">
@@ -144,6 +128,21 @@
                     <div class="player-info white-player">
                         <span id="whitePlayerName" class="player-name">White Player</span>
                         <span id="whitePlayerElo" class="player-elo"></span>
+                    </div>
+                </div>
+                
+                <!-- Navigation (moved below chess board) -->
+                <div class="board-navigation">
+                    <div class="nav-controls">
+                        <button id="firstMoveBtn" class="nav-btn">⏮️</button>
+                        <button id="prevMoveBtn" class="nav-btn">◀️</button>
+                        <button id="nextMoveBtn" class="nav-btn">▶️</button>
+                        <button id="lastMoveBtn" class="nav-btn">⏭️</button>
+                    </div>
+                    <div class="position-info">
+                        <div id="currentPositionInfo" class="position-display">
+                            Starting Position
+                        </div>
                     </div>
                 </div>
             </div>

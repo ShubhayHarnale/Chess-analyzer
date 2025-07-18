@@ -1,7 +1,21 @@
-/* Reset and base styles */
+/* Reset and base styles - Chat Spacing Fix v2.0 */
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+}
+
+/* Better touch interactions */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Cross-browser compatibility */
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
 
@@ -9,14 +23,21 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #1a1a1a;
     color: #e0e0e0;
-    line-height: 1.6;
+    line-height: 1.2;
 }
 
 /* App Container */
 .app-container {
-    height: 100vh;
+    min-height: 100vh;
+    width: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
     flex-direction: column;
+    /* Remove fixed height to allow natural flow */
 }
 
 /* Header */
@@ -54,6 +75,13 @@ body {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    /* Touch-friendly */
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .header-btn:hover {
@@ -63,21 +91,33 @@ body {
 
 /* Main Content Layout */
 .main-content {
-    flex: 1;
+    -webkit-box-flex: 1;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     gap: 1.5rem;
     padding: 1rem;
-    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    /* Allow content to flow naturally */
+    overflow-x: auto;
+    overflow-y: visible;
+    min-height: calc(100vh - 120px); /* Account for header */
 }
 
 /* Analysis Sidebar */
 .analysis-sidebar {
-    width: 320px;
+    width: 20%;
+    min-width: 280px;
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     overflow-y: auto;
     padding-right: 0.5rem;
+    flex-shrink: 0;
 }
 
 .panel {
@@ -412,9 +452,15 @@ body {
 }
 
 
-/* Navigation Panel */
-.navigation-panel {
-    flex-shrink: 0; /* Prevent this panel from changing size */
+/* Board Navigation (below chess board) */
+.board-navigation {
+    width: 100%;
+    max-width: min(700px, 70vw); /* Match board size */
+    margin-top: 1rem;
+    background: #2d3748;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #4a5568;
 }
 
 .nav-controls {
@@ -428,8 +474,8 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     font-size: 1rem;
     cursor: pointer;
@@ -437,6 +483,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Touch-friendly */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .nav-btn:hover:not(:disabled) {
@@ -461,6 +513,11 @@ body {
     border: 1px solid #4a5568;
 }
 
+.position-info {
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
 /* Move List */
 .moves-list-container {
     max-height: 300px;
@@ -470,7 +527,9 @@ body {
 
 /* AI Chat Interface */
 .chat-interface {
-    width: 400px;
+    width: 25%;
+    min-width: 320px;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
     background: #2d3748;
@@ -516,6 +575,140 @@ body {
     border: 1px solid #4a5568;
 }
 
+/* Markdown Styling in Chat Messages */
+.message-content h1.chat-h1 {
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    color: #f7fafc !important;
+    margin: 0.75rem 0 0.5rem 0 !important;
+    border-bottom: 1px solid #667eea !important;
+    padding-bottom: 0.25rem !important;
+}
+
+.message-content h2.chat-h2 {
+    font-size: 1.05rem !important;
+    font-weight: bold !important;
+    color: #e2e8f0 !important;
+    margin: 0.6rem 0 0.4rem 0 !important;
+    border-bottom: 1px solid #4a5568 !important;
+    padding-bottom: 0.2rem !important;
+}
+
+.message-content h3.chat-h3 {
+    font-size: 0.95rem !important;
+    font-weight: bold !important;
+    color: #cbd5e0 !important;
+    margin: 0.5rem 0 0.3rem 0 !important;
+}
+
+.message-content strong {
+    font-weight: bold;
+    color: #f7fafc;
+}
+
+.message-content em {
+    font-style: italic;
+    color: #e2e8f0;
+}
+
+.message-content ul.chat-ul {
+    margin: 0.3rem 0 !important;
+    padding-left: 0 !important;
+}
+
+.message-content ul.chat-ol {
+    margin: 0.3rem 0 !important;
+    padding-left: 0 !important;
+    list-style: none !important;
+}
+
+.message-content li.chat-li {
+    margin: 0.05rem 0 !important;
+    padding-left: 0 !important;
+    color: #cbd5e0 !important;
+    line-height: 1.4 !important;
+}
+
+.message-content li.chat-li-numbered {
+    margin: 0.05rem 0 !important;
+    padding-left: 0 !important;
+    color: #cbd5e0 !important;
+    line-height: 1.4 !important;
+    list-style: none !important;
+}
+
+.message-content .chat-number {
+    font-weight: bold !important;
+    color: #f7fafc !important;
+    margin-right: 0.2rem !important;
+    display: inline-block !important;
+}
+
+/* Clean spacing for chat messages */
+.message-content {
+    font-size: 0.95rem;
+    line-height: 1.4 !important;
+}
+
+/* Universal reset - no margins anywhere */
+.message-content * {
+    margin: 0 !important;
+    line-height: inherit !important;
+}
+
+/* Very minimal spacing only for major sections */
+.message-content > * {
+    margin-bottom: 0.2rem !important;
+}
+
+.message-content > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Force consistent spacing for all list items */
+.message-content li,
+.message-content .chat-li,
+.message-content .chat-li-numbered {
+    margin: 0.05rem 0 !important;
+    padding: 0 !important;
+}
+
+.message-content pre.chat-code {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    overflow-x: auto;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+}
+
+.message-content code.chat-inline-code {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    padding: 0.2rem 0.4rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    color: #81c784;
+}
+
+/* Paragraph spacing */
+.message-content p {
+    margin: 0.3rem 0 !important;
+    line-height: 1.4 !important;
+}
+
+.message-content p:first-child {
+    margin-top: 0;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
 .chat-message {
     margin-bottom: 1rem;
     animation: slideInChat 0.3s ease-out;
@@ -530,6 +723,7 @@ body {
     border-radius: 12px;
     max-width: 100%;
     word-wrap: break-word;
+    line-height: 1.2 !important;
 }
 
 .user-message .message-content {
@@ -546,13 +740,15 @@ body {
 }
 
 .ai-message .message-content ul {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
+    margin: 0.3rem 0 !important;
+    padding-left: 0 !important;
 }
 
 .ai-message .message-content li {
-    margin: 0.25rem 0;
-    color: #cbd5e0;
+    margin: 0.05rem 0 !important;
+    padding-left: 0 !important;
+    color: #cbd5e0 !important;
+    line-height: 1.4 !important;
 }
 
 .chat-status {
@@ -754,23 +950,24 @@ body {
 
 /* Board Container */
 .board-container {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
+    justify-content: flex-start; /* Move board up */
+    padding: 1rem 1.5rem 2rem 1.5rem; /* Less top padding, more bottom */
     background: #2d3748;
-    max-width: calc(100vw - 400px);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     border: 1px solid #4a5568;
+    min-width: 0; /* Allow shrinking */
+    max-width: 100%;
 }
 
 .board-header, .board-footer {
     width: 100%;
-    max-width: 600px;
-    margin: 1rem 0;
+    max-width: min(700px, 70vw); /* Match bigger board size */
+    margin: 0.75rem 0; /* Slightly less margin */
 }
 
 .player-info {
@@ -883,8 +1080,8 @@ body {
 
 .chess-board {
     width: 95%;
-    max-width: 600px; /* Increased from 500px */
-    min-width: 500px; /* Increased from 400px */
+    max-width: min(700px, 70vw); /* Bigger board */
+    min-width: min(500px, 75vw); /* Larger minimum */
     margin: 0 auto;
     border: 3px solid #4a5568;
     border-radius: 8px;
@@ -1423,61 +1620,278 @@ body {
     }
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .main-content {
-        flex-direction: column;
-    }
-    
-    .analysis-sidebar {
-        width: 100%;
-        flex-direction: row;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-    }
-    
-    .panel {
-        min-width: 300px;
-    }
-    
-    .board-container {
-        padding: 1rem;
-    }
+/* Mobile-First Responsive Design */
 
-    .chat-interface {
-        width: 100%;
-        height: 450px; /* Slightly taller on mobile for better usability */
-        order: -1; /* Show chat at the top on mobile */
-    }
-}
-
-@media (max-width: 768px) {
+/* Mobile Base Styles (< 768px) */
+@media (max-width: 767px) {
     .app-header {
-        padding: 1rem;
+        padding: 0.75rem 1rem;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
+    }
+    
+    .app-header h1 {
+        font-size: 1.5rem;
+        text-align: center;
     }
     
     .upload-controls {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 0.5rem;
     }
     
-    .analysis-sidebar {
+    .header-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        min-width: 120px;
+    }
+    
+    .main-content {
         flex-direction: column;
+        padding: 0.75rem;
+        gap: 1rem;
     }
     
-    .panel {
-        min-width: auto;
-    }
-    
-    .modal-content {
-        min-width: auto;
-        margin: 1rem;
+    /* Stack layout vertically on mobile */
+    .analysis-sidebar {
+        width: 100%;
+        flex-direction: column;
+        order: 2; /* Move sidebar below board on mobile */
+        overflow-y: visible;
+        padding-right: 0;
     }
     
     .board-container {
+        order: 1; /* Board first on mobile */
+        padding: 0.75rem 0;
+        min-height: auto;
+    }
+    
+    .chat-interface {
+        order: 3; /* Chat last on mobile */
+        width: 100%;
+        height: 400px; /* Shorter on mobile */
+        margin-top: 1rem;
+    }
+    
+    /* Make chess board responsive */
+    .chess-board {
+        width: 100% !important;
+        max-width: 350px !important;
+        min-width: 280px !important;
+        margin: 0 auto !important;
+    }
+    
+    .board-header, .board-footer {
+        max-width: 350px;
+        margin: 0.5rem auto;
+    }
+    
+    .board-navigation {
+        max-width: 350px;
+        margin: 0.75rem auto 0 auto;
+        padding: 0.75rem;
+    }
+    
+    .player-info {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .board-controls {
+        flex-wrap: wrap;
+        gap: 0.5rem;
         padding: 0.5rem;
+    }
+    
+    .reset-board-btn, .flip-board-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        min-width: 100px;
+    }
+    
+    /* Panel adjustments */
+    .panel {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .panel h3 {
+        font-size: 1rem;
+    }
+    
+    /* Navigation controls */
+    .nav-controls {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .nav-btn {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        min-width: 60px;
+    }
+    
+    /* Modal adjustments */
+    .modal-content {
+        width: 95% !important;
+        max-width: none !important;
+        margin: 1rem !important;
+        min-width: auto !important;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+/* Tablet Styles (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .main-content {
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1rem;
+    }
+    
+    /* Horizontal layout for sidebar on tablet */
+    .analysis-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        order: 2;
+    }
+    
+    .panel {
+        min-width: 280px;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    
+    .board-container {
+        order: 1;
+        padding: 1.25rem;
+    }
+    
+    .chat-interface {
+        order: 3;
+        width: 100%;
+        height: 500px;
+        margin-top: 1rem;
+    }
+    
+    .chess-board {
+        max-width: min(600px, 75vw) !important;
+        min-width: min(400px, 65vw) !important;
+    }
+    
+    .board-header, .board-footer {
+        max-width: min(600px, 75vw);
+    }
+    
+    .board-navigation {
+        max-width: min(600px, 75vw);
+    }
+}
+
+/* Large Desktop Styles (> 1024px) */
+@media (min-width: 1025px) {
+    .main-content {
+        flex-direction: row;
+        gap: 1.5rem;
+        padding: 1rem;
+    }
+    
+    .analysis-sidebar {
+        width: 20%;
+        min-width: 280px;
+        max-width: 400px;
+        flex-direction: column;
+        order: 1;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+    
+    .board-container {
+        flex: 1 1 auto;
+        order: 2;
+        padding: 1.5rem;
+    }
+    
+    .chat-interface {
+        width: 25%;
+        min-width: 320px;
+        max-width: 500px;
+        order: 3;
+        height: 600px;
+    }
+    
+    .chess-board {
+        max-width: min(700px, 70vw) !important;
+        min-width: min(500px, 60vw) !important;
+    }
+    
+    .board-header, .board-footer {
+        max-width: min(700px, 70vw);
+    }
+    
+    .board-navigation {
+        max-width: min(700px, 70vw);
+    }
+}
+
+/* Extra small devices (< 480px) */
+@media (max-width: 479px) {
+    .app-header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .header-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        min-width: 100px;
+    }
+    
+    .main-content {
+        padding: 0.5rem;
+    }
+    
+    .chess-board {
+        max-width: 300px !important;
+        min-width: 250px !important;
+    }
+    
+    .board-header, .board-footer {
+        max-width: 300px;
+    }
+    
+    .board-navigation {
+        max-width: 300px;
+        margin: 0.5rem auto 0 auto;
+        padding: 0.5rem;
+    }
+    
+    .player-info {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .panel {
+        padding: 0.75rem;
+    }
+    
+    .chat-interface {
+        height: 350px;
+    }
+    
+    .modal-content {
+        width: 98% !important;
+        margin: 0.5rem !important;
     }
 }
 

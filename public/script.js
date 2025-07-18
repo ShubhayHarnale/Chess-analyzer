@@ -2139,15 +2139,94 @@ class ChessAnalyzer {
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
         
-        // Handle HTML content safely (convert newlines to breaks)
-        const formattedContent = content.replace(/\n/g, '<br>');
-        contentDiv.innerHTML = formattedContent;
+        // Render markdown for AI messages, plain text for user messages
+        if (sender === 'ai') {
+            contentDiv.innerHTML = this.renderMarkdown(content);
+        } else {
+            contentDiv.textContent = content;
+        }
         
         messageDiv.appendChild(contentDiv);
         this.chatMessages.appendChild(messageDiv);
         
         // Scroll to bottom
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    renderMarkdown(content) {
+        // Simple markdown parser for chess AI responses
+        let html = content;
+        
+        // Escape HTML to prevent injection
+        html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        // Code blocks first (```code```) - before other processing
+        html = html.replace(/```([\s\S]*?)```/g, '<pre class="chat-code">$1</pre>');
+        
+        // Inline code (`code`) - before italic processing
+        html = html.replace(/`([^`\n]+)`/g, '<code class="chat-inline-code">$1</code>');
+        
+        // Headers (### ## #)
+        html = html.replace(/^### (.*$)/gm, '<h3 class="chat-h3">$1</h3>');
+        html = html.replace(/^## (.*$)/gm, '<h2 class="chat-h2">$1</h2>');
+        html = html.replace(/^# (.*$)/gm, '<h1 class="chat-h1">$1</h1>');
+        
+        // Bold text (**text**) - before italic to avoid conflicts
+        html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+        
+        // Italic text (*text*) - after bold processing
+        html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+        
+        // Process lists with global counter for entire response
+        const lines = html.split('\n');
+        let inList = false;
+        let listType = null;
+        let processedLines = [];
+        let globalOrderedCounter = 0; // Global counter for entire response
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const unorderedMatch = line.match(/^- (.*)$/);
+            const orderedMatch = line.match(/^\d+\. (.*)$/);
+            
+            if (unorderedMatch) {
+                if (!inList || listType !== 'ul') {
+                    if (inList) processedLines.push(`</${listType}>`);
+                    processedLines.push('<ul class="chat-ul">');
+                    listType = 'ul';
+                    inList = true;
+                }
+                processedLines.push(`<li class="chat-li">${unorderedMatch[1]}</li>`);
+            } else if (orderedMatch) {
+                if (!inList || listType !== 'ol') {
+                    if (inList) processedLines.push(`</${listType}>`);
+                    processedLines.push('<ul class="chat-ol">');
+                    listType = 'ol';
+                    inList = true;
+                }
+                globalOrderedCounter++; // Global increment across entire response
+                processedLines.push(`<li class="chat-li-numbered"><span class="chat-number">${globalOrderedCounter}.</span> ${orderedMatch[1]}</li>`);
+            } else {
+                if (inList) {
+                    processedLines.push(`</${listType}>`);
+                    inList = false;
+                    listType = null;
+                    // Don't reset global counter
+                }
+                processedLines.push(line);
+            }
+        }
+        
+        if (inList) {
+            processedLines.push(`</${listType}>`);
+        }
+        
+        html = processedLines.join('\n');
+        
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+        
+        return html;
     }
 
     showTypingIndicator() {
